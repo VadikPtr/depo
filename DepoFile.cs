@@ -1,0 +1,49 @@
+﻿using System.Text.Json;
+
+namespace DepoBCS;
+
+internal class DepoFile {
+  private string _root_dir;
+
+  internal DepoM parse() {
+    _root_dir = Environment.CurrentDirectory;
+
+    var the_depo     = new DepoM { dir = _root_dir };
+    var dir_hash     = new HashSet<string>();
+    var require_dirs = new Queue<string>();
+    require_dirs.Enqueue(_root_dir);
+
+    while (require_dirs.Count != 0) {
+      var dir = require_dirs.Dequeue();
+      if (!dir_hash.Add(dir)) {
+        continue;
+      }
+      var expr  = read_model(dir);
+      var model = expr.call(dir);
+      the_depo.projects.AddRange(model.projects);
+      if (dir == _root_dir) {
+        the_depo.targets = model.targets;
+      }
+
+      foreach (var require in model.require) {
+        require_dirs.Enqueue(require);
+      }
+    }
+
+    the_depo.projects.Reverse();
+    Console.WriteLine(JsonSerializer.Serialize(the_depo, TheJsonContext.Default.DepoM));
+    return the_depo;
+  }
+
+  private static DepoAction read_model(string dir) {
+    string path = Path.Join(dir, "depo.lisp");
+    try {
+      Console.WriteLine($"Parsing {path}");
+      string text = File.ReadAllText(path);
+      return Parser.parse(text);
+    } catch {
+      Console.Error.WriteLine($"Error: failed to parse {path}");
+      throw;
+    }
+  }
+}
