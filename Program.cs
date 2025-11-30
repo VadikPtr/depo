@@ -3,7 +3,7 @@ using DepoBCS;
 
 var timer = Stopwatch.StartNew();
 var depo  = new DepoFile().parse();
-var ninja = new Ninja(depo, BuildConfig.Debug);
+var ninja = new SolutionContext(depo, BuildConfig.Debug);
 ninja.generate();
 ninja.dump_compile_commands();
 ninja.build();

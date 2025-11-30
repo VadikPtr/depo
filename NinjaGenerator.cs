@@ -1,28 +1,21 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 namespace DepoBCS;
 
-internal static class NinjaExt {
-  public static string path_escape_ninja(this string path) {
-    return path.Replace(":", "$:");
-  }
-}
-
-internal class NinjaProject : IDisposable {
+internal class NinjaGenerator : IDisposable {
   public readonly  string          project_file;
   private readonly ProjectM        _project;
-  private readonly Ninja           _ninja;
+  private readonly SolutionContext _ctx;
   private readonly FileStream      _stream;
   private readonly StreamWriter    _writer;
   private readonly HashSet<string> _link_libs  = [];
   private readonly HashSet<string> _link_flags = [];
   private readonly HashSet<string> _cflags     = [];
 
-  public NinjaProject(ProjectM project, Ninja ninja) {
-    project_file = Path.Join(ninja.build_directory, $"{project.name}.ninja");
+  public NinjaGenerator(ProjectM project, SolutionContext ctx) {
+    project_file = Path.Join(ctx.build_directory, $"{project.name}.ninja");
     _project     = project;
-    _ninja       = ninja;
+    _ctx         = ctx;
     _stream      = new FileStream(project_file, FileMode.Create, FileAccess.Write);
     _writer      = new StreamWriter(_stream);
   }
@@ -69,8 +62,8 @@ internal class NinjaProject : IDisposable {
   }
 
   private string get_obj_path(string source_path) {
-    var relative_path = Path.GetRelativePath(relativeTo: _ninja.model.dir, source_path);
-    var full_path     = Path.Join(_ninja.obj_directory, relative_path);
+    var relative_path = Path.GetRelativePath(relativeTo: _ctx.model.dir, source_path);
+    var full_path     = Path.Join(_ctx.obj_directory, relative_path);
     return Path.ChangeExtension(full_path, ".o").path_escape_ninja();
   }
 
@@ -86,51 +79,14 @@ internal class NinjaProject : IDisposable {
   }
 
   private string project_output_files(string name, Kind kind) {
-    var target      = wrap_target_platform_appends(kind, name);
-    var output_path = Path.Join(_ninja.bin_directory, target);
+    var target      = name.wrap(kind);
+    var output_path = Path.Join(_ctx.bin_directory, target);
     var result      = output_path.path_escape_ninja();
     if (kind is Kind.Dll) {
-      result += " | " + project_output_files(name, Kind.Lib);
+      //result += " | " + project_output_files(name, Kind.Lib);
+      result += " " + project_output_files(name, Kind.Lib);
     }
     return result;
-  }
-
-  private static string wrap_target_platform_appends(Kind kind, string name) {
-    if (name.EndsWith(".dll") || name.EndsWith(".exe") || name.EndsWith(".lib")) {
-      return name; // already formatted
-    }
-    switch (kind) {
-      case Kind.Dll:
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-          return name + ".dll";
-        }
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-          return "lib" + name + ".so";
-        }
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-          return "lib" + name + ".dylib";
-        }
-        break;
-      case Kind.Lib:
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-          return name + ".lib";
-        }
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
-            RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-          return "lib" + name + ".a";
-        }
-        break;
-      case Kind.Exe:
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-          return name + ".exe";
-        }
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
-            RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-          return name;
-        }
-        break;
-    }
-    throw new ArgumentOutOfRangeException(nameof(kind));
   }
 
   private void write_compile_rules() {
@@ -169,47 +125,9 @@ internal class NinjaProject : IDisposable {
     _writer.Write("\n\n");
   }
 
-  private void collect_link_flags(ProjectM proj) {
-    bool is_current_project = proj == _project;
-
-    if (is_current_project && proj.kind == Kind.Dll) {
-      _link_flags.Add("-shared");
-    }
-
-    foreach (var link in proj.link) {
-      bool is_shared = link.visibility != VisibilityFlags.None;
-      if (!is_current_project && !is_shared) {
-        continue;
-      }
-
-      if ((link.flags & LinkFlags.Prj) != 0) {
-        foreach (var lib in projects_with_names(link.libs)) {
-          if (lib.kind is Kind.Lib or Kind.Dll) {
-            collect_link_flags(lib);
-            var name = wrap_target_platform_appends(Kind.Lib, lib.name);
-            var path = Path.Join(_ninja.bin_directory, name);
-            _link_libs.Add(path);
-          } else if (lib.kind is Kind.Iface) {
-            collect_link_flags(lib);
-          }
-        }
-        continue;
-      }
-
-      foreach (var lib in link.libs) {
-        if ((link.flags & LinkFlags.Sys) != 0) {
-          _link_flags.Add($"-l{lib}");
-        } else {
-          var path = Path.Join(proj.depo.dir, lib);
-          _link_flags.Add($"-l{path}");
-        }
-      }
-    }
-  }
-
   private IEnumerable<ProjectM> projects_with_names(IEnumerable<string> names) {
     foreach (var name in names) {
-      foreach (var lib_project in _ninja.model.projects) {
+      foreach (var lib_project in _ctx.model.projects) {
         if (lib_project.name == name) {
           yield return lib_project;
         }
@@ -222,7 +140,7 @@ internal class NinjaProject : IDisposable {
     _cflags.Add("--write-dependencies"); // Write a depfile containing user and system headers 
     _cflags.Add("-MP"); // Create phony target for each dependency (other than main file)
 
-    switch (_ninja.config) {
+    switch (_ctx.config) {
       case BuildConfig.Debug:
         _cflags.Add("-g");
         _cflags.Add("-O0");
@@ -296,68 +214,40 @@ internal class NinjaProject : IDisposable {
       }
     }
   }
-}
 
-internal enum BuildConfig {
-  Debug,
-  Release,
-}
+  private void collect_link_flags(ProjectM proj) {
+    bool is_current_project = proj == _project;
 
-internal class Ninja {
-  public readonly DepoM       model;
-  public readonly BuildConfig config;
-  public readonly string      build_directory;
-  public readonly string      bin_directory;
-  public readonly string      obj_directory;
+    if (is_current_project && proj.kind == Kind.Dll) {
+      _link_flags.Add("-shared");
+    }
 
-  public Ninja(DepoM model, BuildConfig config) {
-    this.model      = model;
-    this.config     = config;
-    build_directory = Path.Join(model.dir, "build", config.ToString());
-    bin_directory   = Path.Join(model.dir, "bin", config.ToString());
-    obj_directory   = Path.Join(build_directory, "obj");
-    Directory.CreateDirectory(build_directory);
-    Directory.CreateDirectory(obj_directory);
-    Console.WriteLine($"Build directory: {build_directory}");
-  }
+    foreach (var link in proj.link) {
+      bool is_shared = link.visibility != VisibilityFlags.None;
+      if (!is_current_project && !is_shared) {
+        continue;
+      }
 
-  public void generate() {
-    List<NinjaProject> projects = [];
-    try {
-      foreach (var model_project in model.projects) {
-        if (model_project.kind != Kind.Iface) {
-          projects.Add(new NinjaProject(model_project, this));
+      if ((link.flags & LinkFlags.Prj) != 0) {
+        foreach (var lib in projects_with_names(link.libs)) {
+          if (lib.kind is Kind.Lib or Kind.Dll) {
+            collect_link_flags(lib);
+            _link_libs.Add(Path.Join(_ctx.bin_directory, lib.name.wrap(Kind.Lib)));
+          } else if (lib.kind is Kind.Iface) {
+            collect_link_flags(lib);
+          }
+        }
+        continue;
+      }
+
+      foreach (var lib in link.libs) {
+        if ((link.flags & LinkFlags.Sys) != 0) {
+          _link_flags.Add($"-l{lib}");
+        } else {
+          var path = Path.Join(proj.depo.dir, lib);
+          _link_flags.Add($"-l{path}");
         }
       }
-      foreach (var project in projects) {
-        project.write();
-      }
-    } finally {
-      foreach (var project in projects) {
-        project.Dispose();
-      }
     }
-
-    using var file   = File.Open(Path.Join(build_directory, "build.ninja"), FileMode.Create, FileAccess.Write);
-    using var writer = new StreamWriter(file);
-    foreach (var project in projects) {
-      writer.Write($"subninja ./{Path.GetFileName(project.project_file)}\n");
-    }
-    if (model.targets.Length != 0) {
-      writer.Write($"default {model.targets[0]}\n");
-    }
-    writer.Close();
-  }
-
-  public void dump_compile_commands() {
-    Console.WriteLine("Writing compile commands...");
-    var output = Subprocess.run("ninja", "-C", Path.Join(build_directory), "-t", "compdb").check();
-    Console.WriteLine("Writing compile commands finished.");
-  }
-
-  public void build() {
-    Console.WriteLine("Running build...");
-    Subprocess.run_console_out("ninja", "-C", Path.Join(build_directory), "-v", "-d", "explain");
-    Console.WriteLine("Build finished.");
   }
 }
