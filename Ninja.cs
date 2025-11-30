@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace DepoBCS;
 
@@ -9,11 +10,14 @@ internal static class NinjaExt {
 }
 
 internal class NinjaProject : IDisposable {
-  private readonly ProjectM   _project;
-  private readonly Ninja      _ninja;
-  private readonly FileStream _stream;
-  private readonly TextWriter _writer;
-  public readonly  string     project_file;
+  public readonly  string          project_file;
+  private readonly ProjectM        _project;
+  private readonly Ninja           _ninja;
+  private readonly FileStream      _stream;
+  private readonly StreamWriter    _writer;
+  private readonly HashSet<string> _link_libs  = [];
+  private readonly HashSet<string> _link_flags = [];
+  private readonly HashSet<string> _cflags     = [];
 
   public NinjaProject(ProjectM project, Ninja ninja) {
     project_file = Path.Join(ninja.build_directory, $"{project.name}.ninja");
@@ -29,14 +33,18 @@ internal class NinjaProject : IDisposable {
   }
 
   public void write() {
-    Console.WriteLine($"{project_file} written");
     _writer.Write("ninja_required_version = 1.6\n\n");
-    write_rules();
+    collect_cflags();
+    write_compile_rules();
+    if (_project.kind is Kind.Exe or Kind.Dll) {
+      collect_link_flags(_project);
+      write_link_rules();
+    }
     write_targets();
   }
 
   private void write_targets() {
-    var output_path = project_output_file(_project);
+    var output_path = project_output_files(_project.name, _project.kind);
 
     var file_targets = _project.files
       .Select(src => (src.path_escape_ninja(), dst: get_obj_path(src), rule: detect_rule(src)))
@@ -47,9 +55,16 @@ internal class NinjaProject : IDisposable {
       _writer.Write($"build {dst}: {rule} {src}\n");
     }
 
-    var objs = string.Join(' ', file_targets.Select(x => x.dst));
+    var objs = string.Join(" $\n  ", file_targets.Select(x => x.dst));
     _writer.Write("\n");
-    _writer.Write($"build {output_path}: link {objs}\n\n");
+
+    if (_project.kind is Kind.Exe or Kind.Dll) {
+      var libs = string.Join(" $\n  ", _link_libs.Select(x => x.path_escape_ninja()));
+      _writer.Write($"build {output_path}: link {objs} {libs}\n\n");
+    } else if (_project.kind is Kind.Lib) {
+      _writer.Write($"build {output_path}: ar {objs}\n\n");
+    }
+
     _writer.Write($"build {_project.name}: phony {output_path}\n\n");
   }
 
@@ -70,110 +85,167 @@ internal class NinjaProject : IDisposable {
     return null;
   }
 
-  private string project_output_file(ProjectM project) {
-    var (prefix, suffix) = target_platform_appends(project);
-    var output_path = Path.Join(_ninja.bin_directory, prefix + project.name + suffix);
-    return output_path.path_escape_ninja();
+  private string project_output_files(string name, Kind kind) {
+    var target      = wrap_target_platform_appends(kind, name);
+    var output_path = Path.Join(_ninja.bin_directory, target);
+    var result      = output_path.path_escape_ninja();
+    if (kind is Kind.Dll) {
+      result += " | " + project_output_files(name, Kind.Lib);
+    }
+    return result;
   }
 
-  private static (string prefix, string suffix) target_platform_appends(ProjectM proj) {
-    switch (proj.kind) {
+  private static string wrap_target_platform_appends(Kind kind, string name) {
+    if (name.EndsWith(".dll") || name.EndsWith(".exe") || name.EndsWith(".lib")) {
+      return name; // already formatted
+    }
+    switch (kind) {
       case Kind.Dll:
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-          return ("", ".dll");
+          return name + ".dll";
         }
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-          return ("lib", ".so");
+          return "lib" + name + ".so";
         }
         if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-          return ("lib", ".dylib");
+          return "lib" + name + ".dylib";
         }
-        throw new ArgumentOutOfRangeException();
+        break;
       case Kind.Lib:
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-          return ("", ".lib");
+          return name + ".lib";
         }
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
             RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-          return ("lib", ".a");
+          return "lib" + name + ".a";
         }
-        throw new ArgumentOutOfRangeException();
+        break;
       case Kind.Exe:
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-          return ("", ".exe");
+          return name + ".exe";
         }
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ||
             RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
-          return ("", "");
+          return name;
         }
-        throw new ArgumentOutOfRangeException();
-      default:
-        throw new ArgumentOutOfRangeException();
+        break;
     }
+    throw new ArgumentOutOfRangeException(nameof(kind));
   }
 
-  private void write_rules() {
-    var flags      = generate_flags();
-    var flags_cc   = string.Join(' ', flags);
-    var flags_cxx  = string.Join(' ', flags);
-    var link_flags = "TODO";
-    Console.WriteLine($"{_project.name} cflags: {flags_cc}");
-
+  private void write_compile_rules() {
+    var cflags_str = string.Join(' ', _cflags);
     _writer.Write(
       $"""
       rule cc
-        command = clang {flags_cc} -std=c11 -x c -MF $out.d -c -o $out $in
+        command = clang {cflags_str} -std=c11 -x c -MF $out.d -c -o $out $in
         description = cc $out
         deps = gcc
         depfile = $out.d
 
       rule cxx
-        command = clang++ {flags_cxx} -std=c++20 -x c++ -MF $out.d -c -o $out $in
+        command = clang++ {cflags_str} -std=c++20 -x c++ -MF $out.d -c -o $out $in
         description = cxx $out
         deps = gcc
         depfile = $out.d
 
-      rule link
-        command = clang++ -o $out $in {link_flags}
-        description = link $out
-      """);
-    _writer.Write("\n");
-    _writer.Write("\n");
+      rule ar
+        command = llvm-ar rcs $out $in
+        description = ar $out
+      """
+    );
+    _writer.Write("\n\n");
   }
 
-  private HashSet<string> generate_flags() {
-    var flags = new HashSet<string> {
-      "-fdiagnostics-color=always",
-      "--write-dependencies", // Write a depfile containing user and system headers 
-      "-MP", // Create phony target for each dependency (other than main file)
-    };
+  private void write_link_rules() {
+    var flags = string.Join(' ', _link_flags);
+    _writer.Write(
+      $"""
+      rule link
+        command = clang++ -o $out $in {flags}
+        description = link $out
+      """
+    );
+    _writer.Write("\n\n");
+  }
+
+  private void collect_link_flags(ProjectM proj) {
+    bool is_current_project = proj == _project;
+
+    if (is_current_project && proj.kind == Kind.Dll) {
+      _link_flags.Add("-shared");
+    }
+
+    foreach (var link in proj.link) {
+      bool is_shared = link.visibility != VisibilityFlags.None;
+      if (!is_current_project && !is_shared) {
+        continue;
+      }
+
+      if ((link.flags & LinkFlags.Prj) != 0) {
+        foreach (var lib in projects_with_names(link.libs)) {
+          if (lib.kind is Kind.Lib or Kind.Dll) {
+            collect_link_flags(lib);
+            var name = wrap_target_platform_appends(Kind.Lib, lib.name);
+            var path = Path.Join(_ninja.bin_directory, name);
+            _link_libs.Add(path);
+          } else if (lib.kind is Kind.Iface) {
+            collect_link_flags(lib);
+          }
+        }
+        continue;
+      }
+
+      foreach (var lib in link.libs) {
+        if ((link.flags & LinkFlags.Sys) != 0) {
+          _link_flags.Add($"-l{lib}");
+        } else {
+          var path = Path.Join(proj.depo.dir, lib);
+          _link_flags.Add($"-l{path}");
+        }
+      }
+    }
+  }
+
+  private IEnumerable<ProjectM> projects_with_names(IEnumerable<string> names) {
+    foreach (var name in names) {
+      foreach (var lib_project in _ninja.model.projects) {
+        if (lib_project.name == name) {
+          yield return lib_project;
+        }
+      }
+    }
+  }
+
+  private void collect_cflags() {
+    _cflags.Add("-fdiagnostics-color=always");
+    _cflags.Add("--write-dependencies"); // Write a depfile containing user and system headers 
+    _cflags.Add("-MP"); // Create phony target for each dependency (other than main file)
 
     switch (_ninja.config) {
       case BuildConfig.Debug:
-        flags.Add("-g");
-        flags.Add("-O0");
-        flags.Add("-DDEBUG");
-        flags.Add("-D_DEBUG");
+        _cflags.Add("-g");
+        _cflags.Add("-O0");
+        _cflags.Add("-DDEBUG");
+        _cflags.Add("-D_DEBUG");
         break;
       case BuildConfig.Release:
-        flags.Add("-O3");
-        flags.Add("-DNDEBUG");
+        _cflags.Add("-O3");
+        _cflags.Add("-DNDEBUG");
         break;
       default:
         throw new ArgumentOutOfRangeException();
     }
 
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-      flags.Add("-D_CRT_SECURE_NO_WARNINGS");
+      _cflags.Add("-D_CRT_SECURE_NO_WARNINGS");
     }
 
-    collect_includes(_project, flags);
-    collect_flags(_project, flags);
-
-    return flags;
+    collect_includes(_project);
+    collect_definitions(_project);
   }
 
-  private void collect_includes(ProjectM proj, HashSet<string> flags) {
+  private void collect_includes(ProjectM proj) {
     bool is_current_project = proj == _project;
 
     foreach (var include in proj.include) {
@@ -185,7 +257,7 @@ internal class NinjaProject : IDisposable {
         continue;
       }
       foreach (var value in include.dirs) {
-        flags.Add($"-I{value}");
+        _cflags.Add($"-I{value}");
       }
     }
 
@@ -193,17 +265,13 @@ internal class NinjaProject : IDisposable {
       if ((link.flags & LinkFlags.Prj) == 0) {
         continue; // do not care
       }
-      foreach (var lib_name in link.libs) {
-        foreach (var lib_project in _ninja.model.projects) {
-          if (lib_project.name == lib_name) {
-            collect_includes(lib_project, flags);
-          }
-        }
+      foreach (var lib in projects_with_names(link.libs)) {
+        collect_includes(lib);
       }
     }
   }
 
-  private void collect_flags(ProjectM proj, HashSet<string> flags) {
+  private void collect_definitions(ProjectM proj) {
     bool is_current_project = proj == _project;
 
     foreach (var def in proj.cflags) {
@@ -215,16 +283,18 @@ internal class NinjaProject : IDisposable {
         continue;
       }
       foreach (var value in def.values) {
-        flags.Add(value);
+        _cflags.Add(value);
       }
     }
 
-    // TODO:
-    // foreach (var link in proj.link) {
-    //   // if (proj.kind == Kind.Lib) {
-    //   //   // collect_flags();
-    //   // }
-    // }
+    foreach (var link in proj.link) {
+      if ((link.flags & LinkFlags.Prj) == 0) {
+        continue; // do not care
+      }
+      foreach (var lib in projects_with_names(link.libs)) {
+        collect_definitions(lib);
+      }
+    }
   }
 }
 
@@ -255,7 +325,9 @@ internal class Ninja {
     List<NinjaProject> projects = [];
     try {
       foreach (var model_project in model.projects) {
-        projects.Add(new NinjaProject(model_project, this));
+        if (model_project.kind != Kind.Iface) {
+          projects.Add(new NinjaProject(model_project, this));
+        }
       }
       foreach (var project in projects) {
         project.write();
@@ -275,5 +347,17 @@ internal class Ninja {
       writer.Write($"default {model.targets[0]}\n");
     }
     writer.Close();
+  }
+
+  public void dump_compile_commands() {
+    Console.WriteLine("Writing compile commands...");
+    var output = Subprocess.run("ninja", "-C", Path.Join(build_directory), "-t", "compdb").check();
+    Console.WriteLine("Writing compile commands finished.");
+  }
+
+  public void build() {
+    Console.WriteLine("Running build...");
+    Subprocess.run_console_out("ninja", "-C", Path.Join(build_directory), "-v", "-d", "explain");
+    Console.WriteLine("Build finished.");
   }
 }

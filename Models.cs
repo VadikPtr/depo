@@ -31,7 +31,6 @@ internal enum VisibilityFlags : uint {
 [Flags]
 internal enum LinkFlags : uint {
   None = 0b000,
-  Pub  = 0b001,
   Prj  = 0b010,
   Sys  = 0b100,
 }
@@ -40,10 +39,10 @@ internal record Include(VisibilityFlags flags, string[] dirs);
 
 internal record CFlags(VisibilityFlags flags, string[] values);
 
-internal record Link(LinkFlags flags, string[] libs);
+internal record Link(VisibilityFlags visibility, LinkFlags flags, string[] libs);
 
 internal class ProjectM {
-  [JsonIgnore] public DepoM         parent;
+  [JsonIgnore] public DepoM         depo;
   public              string        name;
   public              Kind          kind;
   public              List<string>  files   = [];
@@ -56,6 +55,7 @@ internal class DepoM {
   public string         dir;
   public string[]       require  = [];
   public string[]       targets  = [];
+  public List<string>   bin      = [];
   public List<ProjectM> projects = [];
 }
 
@@ -123,7 +123,7 @@ internal static class ExprExt {
       ReadOnlySpan<char> str = value_expr.value;
       str = str[1..];
       if (!Enum.TryParse<TEnum>(str, ignoreCase: true, out var value)) {
-        Console.WriteLine($"Can't parse {str} as {typeof(TEnum).Name}");
+        // Console.WriteLine($"Can't parse {str} as {typeof(TEnum).Name}");
         continue;
       }
       flags_int |= Unsafe.As<TEnum, uint>(ref value);
@@ -175,11 +175,11 @@ internal class FilesAction(List<IExpr> expr_args) : IProjectMAction {
     var files = expr_args.unpack_as_string_array_skip_flags();
     foreach (var file in files) {
       if (file.Contains('*')) {
-        foreach (var f in Directory.EnumerateFiles(model.parent.dir, file, SearchOption.AllDirectories)) {
+        foreach (var f in Directory.EnumerateFiles(model.depo.dir, file, SearchOption.AllDirectories)) {
           model.files.Add(f);
         }
       } else {
-        var full_path = Path.Join(model.parent.dir, file);
+        var full_path = Path.Join(model.depo.dir, file);
         model.files.Add(full_path);
       }
     }
@@ -192,7 +192,7 @@ internal class IncludeAction(List<IExpr> expr_args) : IProjectMAction {
       return;
     }
     var dirs = expr_args.unpack_as_string_array_skip_flags()
-      .Select(x => Path.Join(model.parent.dir, x))
+      .Select(x => Path.Join(model.depo.dir, x))
       .ToArray();
     var flags = expr_args.parse_flags<VisibilityFlags>();
     model.include.Add(new Include(flags, dirs));
@@ -204,9 +204,10 @@ internal class LinkAction(List<IExpr> expr_args) : IProjectMAction {
     if (!expr_args.check_os_flags()) {
       return;
     }
-    var libs  = expr_args.unpack_as_string_array_skip_flags();
-    var flags = expr_args.parse_flags<LinkFlags>();
-    model.link.Add(new Link(flags, libs));
+    var libs       = expr_args.unpack_as_string_array_skip_flags();
+    var flags      = expr_args.parse_flags<LinkFlags>();
+    var visibility = expr_args.parse_flags<VisibilityFlags>();
+    model.link.Add(new Link(visibility, flags, libs));
   }
 }
 
@@ -224,7 +225,7 @@ internal class CFlagsAction(List<IExpr> expr_args) : IProjectMAction {
 internal class ProjectAction(List<IExpr> expr_args) : IDepoMAction {
   public void execute(DepoM model) {
     var name    = (ExprValue)expr_args.First();
-    var project = new ProjectM { parent = model, name = name.value };
+    var project = new ProjectM { depo = model, name = name.value };
     foreach (var expr in expr_args.Skip(1)) {
       if (expr is IProjectMAction action) {
         action.execute(project);
@@ -247,6 +248,17 @@ internal class RequireAction(List<IExpr> expr_args) : IDepoMAction {
 internal class TargetsAction(List<IExpr> expr_args) : IDepoMAction {
   public void execute(DepoM model) {
     model.targets = expr_args.unpack_as_string_array();
+  }
+}
+
+internal class BinAction(List<IExpr> expr_args) : IDepoMAction {
+  public void execute(DepoM model) {
+    if (!expr_args.check_os_flags()) {
+      return;
+    }
+    foreach (var value in expr_args.unpack_as_string_array_skip_flags()) {
+      model.bin.Add(Path.Join(model.dir, value));
+    }
   }
 }
 
@@ -305,6 +317,7 @@ internal sealed partial class Parser(List<string> tokens) {
       "require" => new RequireAction(args),
       "targets" => new TargetsAction(args),
       "flags"   => new CFlagsAction(args),
+      "bin"     => new BinAction(args),
       _         => throw new Exception($"{name} call is unknown"), // new ExprCall(name, args),
     };
   }

@@ -18,9 +18,12 @@ internal class DepoFile {
       if (!dir_hash.Add(dir)) {
         continue;
       }
+
       var expr  = read_model(dir);
       var model = expr.call(dir);
+
       the_depo.projects.AddRange(model.projects);
+      the_depo.bin.AddRange(model.bin);
       if (dir == _root_dir) {
         the_depo.targets = model.targets;
       }
@@ -31,14 +34,14 @@ internal class DepoFile {
     }
 
     the_depo.projects.Reverse();
-    Console.WriteLine(JsonSerializer.Serialize(the_depo, TheJsonContext.Default.DepoM));
+    //Console.WriteLine(JsonSerializer.Serialize(the_depo, TheJsonContext.Default.DepoM));
     return the_depo;
   }
 
   private static DepoAction read_model(string dir) {
     string path = Path.Join(dir, "depo.lisp");
     try {
-      Console.WriteLine($"Parsing {path}");
+      // Console.WriteLine($"Parsing {path}");
       string text = File.ReadAllText(path);
       return Parser.parse(text);
     } catch {
