@@ -198,6 +198,10 @@ internal class NinjaGenerator : IDisposable {
   private void collect_definitions(ProjectM proj) {
     bool is_current_project = proj == _project;
 
+    if (is_current_project && proj.kind == Kind.Dll) {
+      _cflags.Add("-D_DLL");
+    }
+
     foreach (var def in proj.cflags) {
       bool is_shared = def.flags != VisibilityFlags.None;
       if (!is_current_project && !is_shared) {
@@ -226,6 +230,21 @@ internal class NinjaGenerator : IDisposable {
 
     if (is_current_project && proj.kind == Kind.Dll) {
       _link_flags.Add("-shared");
+      _link_flags.Add("-Wl,/NODEFAULTLIB:libcmt");
+      switch (_ctx.config) {
+        case BuildConfig.Debug:
+          _link_flags.Add("-lmsvcrtd.lib");
+          // _link_flags.Add("-lvcruntimed.lib");
+          // _link_flags.Add("-lucrtd.lib");
+          break;
+        case BuildConfig.Release:
+          _link_flags.Add("-lmsvcrt.lib");
+          // _link_flags.Add("-lvcruntime.lib");
+          // _link_flags.Add("-lucrt.lib");
+          break;
+        default:
+          throw new ArgumentOutOfRangeException();
+      }
     }
 
     foreach (var link in proj.link) {

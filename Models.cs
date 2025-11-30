@@ -278,6 +278,7 @@ internal sealed partial class Parser(List<string> tokens) {
   private readonly Queue<string> _tokens = new(tokens);
 
   internal static DepoAction parse(string text) {
+    text = comments_regex().Replace(text, "");
     var parser = new Parser(tokenize($"(depo {text})"));
     var expr   = parser.parse_expression();
     return expr as DepoAction ?? throw new Exception("Can't match default depo expression!");
@@ -318,7 +319,7 @@ internal sealed partial class Parser(List<string> tokens) {
       "targets" => new TargetsAction(args),
       "flags"   => new CFlagsAction(args),
       "bin"     => new BinAction(args),
-      _         => throw new Exception($"{name} call is unknown"), // new ExprCall(name, args),
+      _         => throw new Exception($"{name} call is unknown"),
     };
   }
 
@@ -337,4 +338,7 @@ internal sealed partial class Parser(List<string> tokens) {
 
   [GeneratedRegex(@"\s*(,@|[()]|[\w\[\]/':*\.\-_]+|[\S])")]
   private static partial Regex split_regex();
+
+  [GeneratedRegex(@";.*", RegexOptions.Multiline)]
+  private static partial Regex comments_regex();
 }

@@ -51,7 +51,7 @@ internal class SolutionContext {
 
   public void build() {
     Console.WriteLine("Running build...");
-    Subprocess.run_console_out("ninja", "-C", Path.Join(build_directory), "-v", "-d", "explain"); // 
+    Subprocess.run_console_out("ninja", "-C", Path.Join(build_directory), "-v"); // "-d", "explain" 
     Console.WriteLine("Build finished.");
   }
 
