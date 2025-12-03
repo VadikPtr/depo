@@ -9,11 +9,31 @@ public record SubprocessResult {
   public string stderr;
   public int    code;
 
-  public SubprocessResult dump() {
-    if (stdout.AsSpan().Trim().Length != 0) {
+  public SubprocessResult dump(bool trim = false) {
+    if (trim) {
+      foreach (var line in stdout.Split('\n')) {
+        var trimmed = line.Trim();
+        if (trimmed.Length == 0) {
+          continue;
+        }
+        Console.WriteLine(trimmed);
+      }
+      foreach (var line in stderr.Split('\n')) {
+        var trimmed = line.Trim();
+        if (trimmed.Length == 0) {
+          continue;
+        }
+        Console.Error.WriteLine(trimmed);
+      }
+      return this;
+    }
+
+    var trimmed_stdout = stdout.AsSpan().Trim();
+    if (trimmed_stdout.Length != 0) {
       Console.Write(stdout);
     }
-    if (stderr.AsSpan().Trim().Length != 0) {
+    var trimmed_stderr = stderr.AsSpan().Trim();
+    if (trimmed_stderr.Length != 0) {
       Console.Error.Write(stderr);
     }
     return this;

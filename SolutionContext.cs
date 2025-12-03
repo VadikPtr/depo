@@ -1,6 +1,6 @@
 ﻿namespace DepoBCS;
 
-internal enum BuildConfig {
+public enum BuildConfig {
   Debug,
   Release,
 }
@@ -46,6 +46,7 @@ internal class SolutionContext {
   public void dump_compile_commands() {
     Console.WriteLine("Writing compile commands...");
     var output = Subprocess.run("ninja", "-C", Path.Join(build_directory), "-t", "compdb").check();
+    // TODO: write and process
     Console.WriteLine("Writing compile commands finished.");
   }
 

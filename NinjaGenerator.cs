@@ -51,17 +51,23 @@ internal class NinjaGenerator : IDisposable {
     var objs = string.Join(" $\n  ", file_targets.Select(x => x.dst));
     _writer.Write("\n");
 
-    if (_project.kind is Kind.Exe) {
-      var libs = string.Join(" $\n  ", _link_libs.Select(x => x.path_escape_ninja()));
-      _writer.Write($"build {output_path}: link {objs} {libs}\n");
-      _writer.Write($"  linked = {output_path}\n\n");
-    } else if (_project.kind is Kind.Dll) {
-      var implib = project_output_files(_project.name, Kind.Lib);
-      var libs   = string.Join(" $\n  ", _link_libs.Select(x => x.path_escape_ninja()));
-      _writer.Write($"build {output_path} {implib}: link {objs} {libs}\n");
-      _writer.Write($"  linked = {output_path}\n\n");
-    } else if (_project.kind is Kind.Lib) {
-      _writer.Write($"build {output_path}: ar {objs}\n\n");
+    switch (_project.kind) {
+      case Kind.Exe: {
+        var libs = string.Join(" $\n  ", _link_libs.Select(x => x.path_escape_ninja()));
+        _writer.Write($"build {output_path}: link {objs} {libs}\n");
+        _writer.Write($"  linked = {output_path}\n\n");
+        break;
+      }
+      case Kind.Dll: {
+        var implib = project_output_files(_project.name, Kind.Lib);
+        var libs   = string.Join(" $\n  ", _link_libs.Select(x => x.path_escape_ninja()));
+        _writer.Write($"build {output_path} {implib}: link {objs} {libs}\n");
+        _writer.Write($"  linked = {output_path}\n\n");
+        break;
+      }
+      case Kind.Lib:
+        _writer.Write($"build {output_path}: ar {objs}\n\n");
+        break;
     }
 
     _writer.Write($"build {_project.name}: phony {output_path}\n\n");

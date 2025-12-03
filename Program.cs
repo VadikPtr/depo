@@ -2,10 +2,15 @@
 using DepoBCS;
 
 var timer = Stopwatch.StartNew();
+var cmd   = new CmdParser().parse();
 var depo  = new DepoFile().parse();
-var ninja = new SolutionContext(depo, BuildConfig.Debug);
-ninja.generate();
-ninja.dump_compile_commands();
-ninja.build();
-FileCopy.copy_binary_files(depo, ninja.bin_directory);
+
+if (cmd.actions.Contains(CmdAction.Build)) {
+  var ninja = new SolutionContext(depo, cmd.config);
+  ninja.generate();
+  ninja.dump_compile_commands();
+  ninja.build();
+  FileCopy.copy_binary_files(depo, ninja.bin_directory);
+}
+
 Console.WriteLine($"Done! {timer.Elapsed}");

@@ -19,7 +19,7 @@ internal static class FileCopy {
       string[] args = ob.Concat(files)
         .Concat(["/im", "/njs", "/njh", "/ndl", "/ts", "/np"])
         .ToArray();
-      Subprocess.run(args).check(code => code < 8).dump();
+      Subprocess.run(args).check(code => code < 8).dump(trim: true);
     }
   }
 }
