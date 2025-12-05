@@ -1,0 +1,51 @@
+﻿# depo
+
+Dependency manager and meta-build system for C/C++ on top of ninja
+
+## Examples
+
+DLL library with include folder `inc` and link to static library project `glad`:
+
+```lisp
+(project gapi
+  (kind dll)
+  (files *.cpp)
+  (include 'pub inc)
+  (link 'prj glad)
+  (flags 'iface -DmGAPIWrapperGLImportInterface)
+  (flags -DmGAPIWrapperGLExportInterface)
+)
+```
+
+Top level project definition (executable):
+
+```lisp
+(require
+  deps/cc
+  deps/clay
+  deps/dxtex
+  deps/fontbake
+  deps/glad
+  deps/gns
+  deps/nvtt
+  deps/sdl3
+  gapi
+)
+
+(project lalia
+  (kind exe)
+  (files lalia/*.cpp)
+  (include lalia)
+  (link 'prj
+    cc
+    clay
+    dxtex
+    fontbake
+    gns
+    nvtt
+    sdl3
+    gapi)
+)
+
+(targets lalia)
+```
