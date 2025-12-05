@@ -1,6 +1,10 @@
 ﻿using System.Diagnostics;
 using depo;
 
+#if !DEBUG
+try {
+#endif
+
 var timer = Stopwatch.StartNew();
 var cmd   = new CmdParser().parse();
 var depo  = new DepoFile().parse();
@@ -14,3 +18,9 @@ if (cmd.actions.Contains(CmdAction.Build)) {
 }
 
 Console.WriteLine($"Done! {timer.Elapsed}");
+
+#if !DEBUG
+} catch (Exception ex) {
+  Console.WriteLine(ex.ToString());
+}
+#endif

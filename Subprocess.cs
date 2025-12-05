@@ -121,6 +121,10 @@ public static class Subprocess {
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !name.EndsWith(".exe")) {
       name += ".exe";
     }
+    if (name.Contains('/') || name.Contains('\\')) {
+      // not a cmd name, but path
+      return name;
+    }
     var path = Environment.GetEnvironmentVariable("PATH")
                ?? throw new Exception("Environment variable PATH is not set");
     foreach (var dir in path.Split(Path.PathSeparator)) {

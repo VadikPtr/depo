@@ -45,14 +45,15 @@ internal class SolutionContext {
 
   public void dump_compile_commands() {
     Console.WriteLine("Writing compile commands...");
-    var output = Subprocess.run("ninja", "-C", Path.Join(build_directory), "-t", "compdb").check();
+    var output = Subprocess.run(DepoTool.path_to("ninja"), "-C", Path.Join(build_directory), "-t", "compdb").check();
+    File.WriteAllText("compile_commands.json", output.stdout);
     // TODO: write and process
     Console.WriteLine("Writing compile commands finished.");
   }
 
   public void build() {
     Console.WriteLine("Running build...");
-    Subprocess.run_console_out("ninja", "-C", Path.Join(build_directory), "-v"); // "-d", "explain" 
+    Subprocess.run_console_out(DepoTool.path_to("ninja"), "-C", Path.Join(build_directory), "-v"); // "-d", "explain" 
     Console.WriteLine("Build finished.");
   }
 
