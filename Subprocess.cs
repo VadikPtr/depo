@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace DepoBCS;
+namespace depo;
 
 public record SubprocessResult {
   public string command;

@@ -1,4 +1,4 @@
-﻿namespace DepoBCS;
+﻿namespace depo;
 
 internal enum CmdAction {
   Build,

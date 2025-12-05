@@ -1,4 +1,4 @@
-﻿namespace DepoBCS;
+﻿namespace depo;
 
 internal static class NinjaExt {
   public static string path_escape_ninja(this string path) {

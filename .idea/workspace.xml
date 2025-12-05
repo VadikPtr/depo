@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="BackendCodeEditorMiscSettings">
+    <option name="/Default/Housekeeping/GlobalSettingsUpgraded/IsUpgraded/@EntryValue" value="true" type="bool" />
+    <option name="/Default/RiderDebugger/RiderRestoreDecompile/RestoreDecompileSetting/@EntryValue" value="false" type="bool" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="d99ea3f5-a98e-4048-a19f-3a7bcec46e12" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.editorconfig" beforeDir="false" afterPath="$PROJECT_DIR$/.editorconfig" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.DepoBCS/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.DepoBCS/.idea/codeStyles/Project.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.DepoBCS/.idea/codeStyles/codeStyleConfig.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.DepoBCS/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.DepoBCS/.idea/indexLayout.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.DepoBCS/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.DepoBCS/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/CmdParser.cs" beforeDir="false" afterPath="$PROJECT_DIR$/CmdParser.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DepoBCS.csproj" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/DepoBCS.sln" beforeDir="false" afterPath="$PROJECT_DIR$/depo.sln" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/DepoBCS.sln.DotSettings" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/DepoFile.cs" beforeDir="false" afterPath="$PROJECT_DIR$/DepoFile.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/FileCopy.cs" beforeDir="false" afterPath="$PROJECT_DIR$/FileCopy.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KindExt.cs" beforeDir="false" afterPath="$PROJECT_DIR$/KindExt.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Models.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Models.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NinjaExt.cs" beforeDir="false" afterPath="$PROJECT_DIR$/NinjaExt.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NinjaGenerator.cs" beforeDir="false" afterPath="$PROJECT_DIR$/NinjaGenerator.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/PupokPath.cs" beforeDir="false" afterPath="$PROJECT_DIR$/PupokPath.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/SolutionContext.cs" beforeDir="false" afterPath="$PROJECT_DIR$/SolutionContext.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Subprocess.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Subprocess.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/TheJsonContext.cs" beforeDir="false" afterPath="$PROJECT_DIR$/TheJsonContext.cs" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="36RPbdqZ7cK8fp81PfHHeuaw4hG" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.RadMigrateCodeStyle": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "git-widget-placeholder": "master",
+    "ignore.virus.scanning.warn.message": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="d99ea3f5-a98e-4048-a19f-3a7bcec46e12" name="Changes" comment="" />
+      <created>1764966486446</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1764966486446</updated>
+      <workItem from="1764966487620" duration="20000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="UnityProjectConfiguration" hasMinimizedUI="false" />
+  <component name="VcsManagerConfiguration">
+    <option name="CLEAR_INITIAL_COMMIT_MESSAGE" value="true" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.OperationCanceledException" breakIfHandledByOtherCode="false" displayValue="System.OperationCanceledException" />
+          <option name="timeStamp" value="1" />
+        </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.Threading.Tasks.TaskCanceledException" breakIfHandledByOtherCode="false" displayValue="System.Threading.Tasks.TaskCanceledException" />
+          <option name="timeStamp" value="2" />
+        </breakpoint>
+        <breakpoint enabled="true" type="DotNet_Exception_Breakpoints">
+          <properties exception="System.Threading.ThreadAbortException" breakIfHandledByOtherCode="false" displayValue="System.Threading.ThreadAbortException" />
+          <option name="timeStamp" value="3" />
+        </breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

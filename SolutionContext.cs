@@ -1,4 +1,4 @@
-﻿namespace DepoBCS;
+﻿namespace depo;
 
 public enum BuildConfig {
   Debug,

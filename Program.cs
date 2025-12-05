@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics;
-using DepoBCS;
+using depo;
 
 var timer = Stopwatch.StartNew();
 var cmd   = new CmdParser().parse();

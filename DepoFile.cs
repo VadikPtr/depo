@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace DepoBCS;
+namespace depo;
 
 internal class DepoFile {
   private string _root_dir;

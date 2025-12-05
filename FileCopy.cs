@@ -1,11 +1,11 @@
-﻿namespace DepoBCS;
+﻿namespace depo;
 
 internal static class FileCopy {
   internal static void copy_binary_files(DepoM model, string out_dir) {
     Dictionary<string, List<string>> src_dirs_files = [];
 
     foreach (var bin in model.bin) {
-      var dir  = PupokPath.parent(bin);
+      var dir  = PathLib.parent(bin);
       var name = Path.GetFileName(bin);
       if (src_dirs_files.TryGetValue(dir, out List<string> src_dirs)) {
         src_dirs.Add(name);

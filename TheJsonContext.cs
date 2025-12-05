@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace DepoBCS;
+namespace depo;
 
 [JsonSourceGenerationOptions(
   WriteIndented = true,

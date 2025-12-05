@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace DepoBCS;
+namespace depo;
 
 internal static class KindExt {
   public static string wrap(this string name, Kind kind) {

@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-namespace DepoBCS;
+namespace depo;
 
 internal enum Kind : uint {
   Dll,

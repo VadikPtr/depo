@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace DepoBCS;
+namespace depo;
 
 internal class NinjaGenerator : IDisposable {
   public readonly  string          project_file;
