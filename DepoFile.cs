@@ -37,7 +37,7 @@ internal class DepoFile {
     }
 
     the_depo.projects.Reverse();
-    //Console.WriteLine(JsonSerializer.Serialize(the_depo, TheJsonContext.Default.DepoM));
+    Console.WriteLine(JsonSerializer.Serialize(the_depo, TheJsonContext.Default.DepoM));
     return the_depo;
   }
 
