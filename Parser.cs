@@ -31,7 +31,7 @@ internal sealed partial class Parser(List<string> tokens) {
     _tokens.Dequeue();
 
     var expr = call_expression(head.value, arguments);
-    // Console.WriteLine(expr);
+     Console.WriteLine(expr);
     return expr;
   }
 
@@ -61,14 +61,14 @@ internal sealed partial class Parser(List<string> tokens) {
     foreach (Match match in matches) {
       var value = match.Value.Trim();
       if (value.Length != 0) {
-        // Console.WriteLine($"Token: {value}");
+        //Console.WriteLine($"Token: {value}");
         tokens.Add(value);
       }
     }
     return tokens;
   }
 
-  [GeneratedRegex(@"\s*(,@|[()]|[\w\[\]/':*\.\-_=]+|[\S])")]
+  [GeneratedRegex(@"\s*(,|[()]|[\w\[\]/':*\.\-_=@]+|[\S])")]
   private static partial Regex split_regex();
 
   [GeneratedRegex(@";.*", RegexOptions.Multiline)]

@@ -260,7 +260,7 @@ internal class TargetsAction(List<IExpr> expr_args) : IDepoMAction {
 
 internal class DepsAction(List<IExpr> expr_args) : IDepoMAction {
   public void execute(DepoM model) {
-    foreach (var expr in expr_args.Skip(1)) {
+    foreach (var expr in expr_args) {
       if (expr is IDepoMAction action) {
         action.execute(model);
       } else {
@@ -274,7 +274,7 @@ internal class GitAction(List<IExpr> expr_args) : IDepoMAction {
   public void execute(DepoM model) {
     var args = expr_args.unpack_as_string_array_skip_flags();
     if (args.Length != 2) {
-      throw new Exception($"Bad dependency arguments");
+      throw new Exception("Bad dependency arguments");
     }
     model.git_deps.Add(new DependencyM { name = args[0], url = args[1] });
   }
@@ -284,7 +284,7 @@ internal class SvnAction(List<IExpr> expr_args) : IDepoMAction {
   public void execute(DepoM model) {
     var args = expr_args.unpack_as_string_array_skip_flags();
     if (args.Length != 2) {
-      throw new Exception($"Bad dependency arguments");
+      throw new Exception("Bad dependency arguments");
     }
     model.svn_deps.Add(new DependencyM { name = args[0], url = args[1] });
   }
@@ -294,7 +294,7 @@ internal class ArchiveAction(List<IExpr> expr_args) : IDepoMAction {
   public void execute(DepoM model) {
     var args = expr_args.unpack_as_string_array_skip_flags();
     if (args.Length != 2) {
-      throw new Exception($"Bad dependency arguments");
+      throw new Exception("Bad dependency arguments");
     }
     model.archive_deps.Add(new DependencyM { name = args[0], url = args[1] });
   }
@@ -317,6 +317,8 @@ internal class DepoAction(List<IExpr> expr_args) : IExpr {
     foreach (var expr in expr_args) {
       if (expr is IDepoMAction action) {
         action.execute(model);
+      } else {
+        Console.WriteLine($"Unknown action: {expr} called on Depo");
       }
     }
     return model;
