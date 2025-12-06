@@ -17,6 +17,18 @@ DLL library with include folder `inc` and link to static library project `glad`:
 )
 ```
 
+Pre-built DLL interface library with auto copy DLL to final binary directory:
+
+```lisp
+(project dxtex
+  (kind iface)
+  (include 'iface include)
+  (link 'iface 'win lib/dxtex.lib)
+)
+
+(bin 'win lib/dxtex.dll)
+```
+
 Top level project definition (executable):
 
 ```lisp

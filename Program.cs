@@ -9,6 +9,11 @@ var timer = Stopwatch.StartNew();
 var cmd   = new CmdParser().parse();
 var depo  = new DepoFile().parse();
 
+if (cmd.actions.Contains(CmdAction.Pull)) {
+  var deps = new Dependencies(depo);
+  deps.pull();
+}
+
 if (cmd.actions.Contains(CmdAction.Build)) {
   var ninja = new SolutionContext(depo, cmd.config);
   ninja.generate();

@@ -25,7 +25,10 @@ internal class DepoFile {
       the_depo.projects.AddRange(model.projects);
       the_depo.bin.AddRange(model.bin);
       if (dir == _root_dir) {
-        the_depo.targets = model.targets;
+        the_depo.targets      = model.targets;
+        the_depo.archive_deps = model.archive_deps;
+        the_depo.git_deps     = model.git_deps;
+        the_depo.svn_deps     = model.svn_deps;
       }
 
       foreach (var require in model.require) {
