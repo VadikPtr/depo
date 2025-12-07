@@ -44,7 +44,7 @@ internal class DepoFile {
   private static DepoAction read_model(string dir) {
     string path = Path.Join(dir, "depo.lisp");
     try {
-      // Console.WriteLine($"Parsing {path}");
+      Log.debug("Parsing {0}", path);
       string text = File.ReadAllText(path);
       return Parser.parse(text);
     } catch {

@@ -1,8 +1,5 @@
 ﻿using System.Diagnostics;
 using depo;
-using Microsoft.Extensions.Logging;
-
-TheLog.log.LogInformation($"Starting");
 
 #if !DEBUG
 try {
@@ -25,12 +22,10 @@ if (cmd.actions.Contains(CmdAction.Build)) {
   FileCopy.copy_binary_files(depo, ninja.bin_directory);
 }
 
-TheLog.log.LogInformation($"Done! {timer.Elapsed}");
+Log.info("Done! {0}", timer.Elapsed);
 
 #if !DEBUG
 } catch (Exception ex) {
   Console.WriteLine(ex.ToString());
 }
 #endif
-
-TheLog.destroy();

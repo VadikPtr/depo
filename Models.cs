@@ -53,6 +53,7 @@ internal class ProjectM {
 internal class DependencyM {
   public string name;
   public string url;
+  public string branch;
 }
 
 internal class DepoM {
@@ -270,33 +271,44 @@ internal class DepsAction(List<IExpr> expr_args) : IDepoMAction {
   }
 }
 
-internal class GitAction(List<IExpr> expr_args) : IDepoMAction {
+internal abstract class DepActionBase(List<IExpr> expr_args) : IDepoMAction {
   public void execute(DepoM model) {
     var args = expr_args.unpack_as_string_array_skip_flags();
-    if (args.Length != 2) {
+    if (args.Length != 2 && args.Length != 3) {
       throw new Exception("Bad dependency arguments");
     }
-    model.git_deps.Add(new DependencyM { name = args[0], url = args[1] });
+    var dep = new DependencyM { name = args[0], url = args[1] };
+    if (args.Length == 3) {
+      dep.branch = args[2];
+    }
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+      dep.url = dep.url.Replace("{os}", "windows");
+    } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+      dep.url = dep.url.Replace("{os}", "linux");
+    } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+      dep.url = dep.url.Replace("{os}", "macos");
+    }
+    add_dep(model, dep);
+  }
+
+  protected abstract void add_dep(DepoM model, DependencyM dep);
+}
+
+internal class GitAction(List<IExpr> expr_args) : DepActionBase(expr_args) {
+  protected override void add_dep(DepoM model, DependencyM dep) {
+    model.git_deps.Add(dep);
   }
 }
 
-internal class SvnAction(List<IExpr> expr_args) : IDepoMAction {
-  public void execute(DepoM model) {
-    var args = expr_args.unpack_as_string_array_skip_flags();
-    if (args.Length != 2) {
-      throw new Exception("Bad dependency arguments");
-    }
-    model.svn_deps.Add(new DependencyM { name = args[0], url = args[1] });
+internal class SvnAction(List<IExpr> expr_args) : DepActionBase(expr_args) {
+  protected override void add_dep(DepoM model, DependencyM dep) {
+    model.svn_deps.Add(dep);
   }
 }
 
-internal class ArchiveAction(List<IExpr> expr_args) : IDepoMAction {
-  public void execute(DepoM model) {
-    var args = expr_args.unpack_as_string_array_skip_flags();
-    if (args.Length != 2) {
-      throw new Exception("Bad dependency arguments");
-    }
-    model.archive_deps.Add(new DependencyM { name = args[0], url = args[1] });
+internal class ArchiveAction(List<IExpr> expr_args) : DepActionBase(expr_args) {
+  protected override void add_dep(DepoM model, DependencyM dep) {
+    model.archive_deps.Add(dep);
   }
 }
 

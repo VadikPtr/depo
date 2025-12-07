@@ -58,6 +58,16 @@ public static class PathLib {
   }
 
   private static bool is_directory_separator(char value) => sep == value;
+
+  public static string replace_ext_full(string path, string new_ext) {
+    var dir   = parent(path);
+    var name  = Path.GetFileName(path);
+    var ext_i = name.IndexOf('.');
+    if (ext_i == -1) {
+      ext_i = name.Length;
+    }
+    return join(dir, name[..ext_i] + new_ext);
+  }
 }
 
 public class PupokPathWrapper(string path) {

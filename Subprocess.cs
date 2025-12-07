@@ -59,7 +59,7 @@ public static class Subprocess {
     using Process process     = new Process();
     var           file_name   = find_exe(command[0]);
     var           commandline = $"{file_name} {string.Join(' ', command.Skip(1))}";
-    // Console.WriteLine($"Running {commandline}");
+    Log.debug("Running {0}", commandline);
     ProcessStartInfo info = new ProcessStartInfo {
       FileName               = file_name,
       RedirectStandardOutput = true,
@@ -86,7 +86,7 @@ public static class Subprocess {
     using Process process     = new Process();
     var           file_name   = find_exe(command[0]);
     var           commandline = $"{file_name} {string.Join(' ', command.Skip(1))}";
-    // Console.WriteLine($"Running {commandline}");
+    Log.debug("Running {0}", commandline);
     ProcessStartInfo info = new ProcessStartInfo {
       FileName               = file_name,
       RedirectStandardOutput = true,

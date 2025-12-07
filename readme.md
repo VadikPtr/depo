@@ -2,6 +2,29 @@
 
 Dependency manager and meta-build system for C/C++ on top of ninja
 
+## Build
+
+```bash
+dotnet publish -c Release
+```
+
+In `C:/bin` or `~/.local/bin` (in $PATH) add file:
+
+depo.bat
+
+```batch
+@echo off
+D:\src\depo\bin\Release\net10.0\win-x64\publish\depo.exe %*
+```
+
+depo
+
+```shell
+/d/src/depo/bin/Release/net10.0/win-x64/publish/depo.exe $@
+```
+
+Soon I will add automatic installation script.
+
 ## Examples
 
 DLL library with include folder `inc` and link to static library project `glad`:
