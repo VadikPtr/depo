@@ -38,8 +38,10 @@ internal sealed partial class Parser(List<string> tokens) {
   private static IExpr call_expression(string name, List<IExpr> args) {
     return name switch {
       "kind"    => new KindAction(args),
+      "type"    => new KindAction(args),
       "files"   => new FilesAction(args),
       "include" => new IncludeAction(args),
+      "inc"     => new IncludeAction(args),
       "link"    => new LinkAction(args),
       "project" => new ProjectAction(args),
       "depo"    => new DepoAction(args),
@@ -51,6 +53,7 @@ internal sealed partial class Parser(List<string> tokens) {
       "git"     => new GitAction(args),
       "svn"     => new SvnAction(args),
       "archive" => new ArchiveAction(args),
+      "arch"    => new ArchiveAction(args),
       _         => throw new Exception($"{name} call is unknown"),
     };
   }

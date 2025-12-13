@@ -238,7 +238,7 @@ internal class ProjectAction(List<IExpr> expr_args) : IDepoMAction {
       if (expr is IProjectMAction action) {
         action.execute(project);
       } else {
-        Console.WriteLine($"Not handled: {expr}");
+        Log.error($"Not handled: {expr}");
       }
     }
     model.projects.Add(project);
@@ -330,7 +330,7 @@ internal class DepoAction(List<IExpr> expr_args) : IExpr {
       if (expr is IDepoMAction action) {
         action.execute(model);
       } else {
-        Console.WriteLine($"Unknown action: {expr} called on Depo");
+        Log.error($"Unknown action: {expr} called on Depo");
       }
     }
     return model;

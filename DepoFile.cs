@@ -19,7 +19,11 @@ internal class DepoFile {
         continue;
       }
 
-      var expr  = read_model(dir);
+      var expr = read_model(dir);
+      if (expr == null) {
+        Log.info("Cannot read {0}", dir);
+        continue;
+      }
       var model = expr.call(dir);
 
       the_depo.projects.AddRange(model.projects);
@@ -37,7 +41,9 @@ internal class DepoFile {
     }
 
     the_depo.projects.Reverse();
-    Console.WriteLine(JsonSerializer.Serialize(the_depo, TheJsonContext.Default.DepoM));
+    if (Log.is_debug) {
+      Log.debug("TheDepo: {0}", JsonSerializer.Serialize(the_depo, TheJsonContext.Default.DepoM));
+    }
     return the_depo;
   }
 
@@ -47,9 +53,9 @@ internal class DepoFile {
       Log.debug("Parsing {0}", path);
       string text = File.ReadAllText(path);
       return Parser.parse(text);
-    } catch {
-      Console.Error.WriteLine($"Error: failed to parse {path}");
-      throw;
+    } catch (Exception ex) {
+      Log.error($"Error: failed to parse {path}. {ex.Message}");
+      return null;
     }
   }
 }

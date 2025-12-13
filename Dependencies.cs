@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Net;
+using System.Runtime.InteropServices;
 
 namespace depo;
 
@@ -30,14 +31,16 @@ internal class Dependencies {
   }
 
   private void pull_archive(DependencyM dependency) {
-    Log.debug("archive pull {0}", dependency.name);
+    Log.info("--- Archive pull {0}", dependency.name);
     string dir = Path.Join(_deps_dir, dependency.name);
+
     if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
       throw new NotImplementedException();
     }
 
-    bool needs_fetch = check_ts_is_same(dir, dependency.url);
-    if (!needs_fetch) {
+    bool is_same = check_ts_is_same(dir, dependency.url);
+    if (is_same) {
+      Log.debug("No need to fetch");
       return;
     }
 
@@ -45,10 +48,42 @@ internal class Dependencies {
       Directory.Delete(dir, recursive: true);
     }
     Directory.CreateDirectory(dir);
+
+    var archive_path = Path.Join(dir, Path.GetFileName(dependency.url));
+    Log.debug("Archive path: {0}", archive_path);
+    download(dependency.url, archive_path);
+    unpack_archive(archive_path);
+  }
+
+  private static void download(string from, string to) {
+    Log.info("Downloading: {0} -> {1}", from, to);
+    using var client   = new HttpClient();
+    using var response = client.GetAsync(from, HttpCompletionOption.ResponseHeadersRead).Result;
+    response.EnsureSuccessStatusCode();
+    using var stream = response.Content.ReadAsStream();
+    using var file_stream = new FileStream(to, FileMode.Create, FileAccess.Write, FileShare.None,
+                                           bufferSize: 8192, useAsync: false);
+    stream.CopyTo(file_stream);
+  }
+
+  private static void unpack_archive(string archive_path) {
+    Log.info("Unpack archive: {0}", archive_path);
+    var dir = Path.GetDirectoryName(archive_path);
+
+    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+      throw new NotImplementedException();
+    }
+
+    var sz = DepoTool.path_to("7z");
+    Subprocess.run(sz, "x", "-o" + dir, archive_path).check();
+    var tar_path = archive_path.Replace(".xz", "");
+    Subprocess.run(sz, "x", "-o" + dir, tar_path).check();
+    File.Delete(tar_path);
+    File.Delete(archive_path);
   }
 
   private void pull_svn(DependencyM dependency) {
-    Log.debug("svn pull {0}", dependency.name);
+    Log.info("--- Svn pull {0}", dependency.name);
     string dir = Path.Join(_deps_dir, dependency.name);
     if (!Directory.Exists(dir)) {
       Environment.CurrentDirectory = _deps_dir;
@@ -59,7 +94,7 @@ internal class Dependencies {
   }
 
   private void pull_git(DependencyM dependency) {
-    Log.debug("git pull {0}", dependency.name);
+    Log.info("--- Git pull {0}", dependency.name);
     string dir = Path.Join(_deps_dir, dependency.name);
     if (!Directory.Exists(dir)) {
       Environment.CurrentDirectory = _deps_dir;
@@ -70,7 +105,9 @@ internal class Dependencies {
   }
 
   private string create_deps_dir() {
-    if (!(_depo.archive_deps.Any() || _depo.git_deps.Any() || _depo.svn_deps.Any())) {
+    if (_depo.archive_deps.Count == 0 &&
+        _depo.git_deps.Count == 0 &&
+        _depo.svn_deps.Count == 0) {
       return null;
     }
     string dir = Path.Join(Environment.CurrentDirectory, "deps");
@@ -88,9 +125,9 @@ internal class Dependencies {
     string    local_ts = File.ReadAllText(ts_path);
     string    ts_url   = PathLib.replace_ext_full(url, ".ts"); // .tar.xz -> .ts
     using var cli      = new HttpClient();
-    var       response = cli.GetAsync(ts_url).Result;
+    using var response = cli.GetAsync(ts_url).Result;
     if (!response.IsSuccessStatusCode) {
-      Log.info("ts not found on server! {0}", Path.GetFileNameWithoutExtension(url));
+      Log.info("TS not found on server! {0}", Path.GetFileNameWithoutExtension(url));
       return false;
     }
     string remote_ts = response.Content.ReadAsStringAsync().Result;
