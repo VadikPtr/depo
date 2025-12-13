@@ -55,6 +55,16 @@ Pre-built DLL interface library with auto copy DLL to final binary directory:
 Top level project definition (executable):
 
 ```lisp
+(deps
+  (git cc git@github.com:VadikPtr/rebus.git)
+  (archive sdl3 https://some-binary-server.ru/sdl3-{os}.tar.xz)
+  (archive dxtex https://some-binary-server.ru/dxtex-{os}.tar.xz)
+  (archive fontbake https://some-binary-server.ru/fontbake-{os}.tar.xz)
+  (archive nvtt https://some-binary-server.ru/nvtt-{os}.tar.xz)
+  (archive gns https://some-binary-server.ru/gns-{os}.tar.xz)
+  (svn lalia-data svn://some-svn-repo.ru/lalia-data)
+)
+
 (require
   deps/cc
   deps/clay
