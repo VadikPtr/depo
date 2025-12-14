@@ -1,7 +1,7 @@
 namespace depo;
 
 internal static class Log {
-  public const bool is_debug = false;
+  public static bool is_debug = false;
 
   internal static void debug(string message, params object[] args) {
     if (is_debug) {

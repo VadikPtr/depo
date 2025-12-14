@@ -59,7 +59,7 @@ internal class NinjaGenerator : IDisposable {
         break;
       }
       case Kind.Dll: {
-        var implib = project_output_files(_project.name, Kind.Lib);
+        var implib = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? project_output_files(_project.name, Kind.Lib) : "";
         var libs   = string.Join(" $\n  ", _link_libs.Select(x => x.path_escape_ninja()));
         _writer.Write($"build {output_path} {implib}: link {objs} {libs}\n");
         _writer.Write($"  linked = {output_path}\n\n");
@@ -103,6 +103,7 @@ internal class NinjaGenerator : IDisposable {
 
   private void write_compile_rules() {
     var cflags_str = string.Join(' ', _cflags);
+    var archiver = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "llvm-ar" : "ar";
     _writer.Write(
       $"""
       rule cc
@@ -118,7 +119,7 @@ internal class NinjaGenerator : IDisposable {
         depfile = $out.d
 
       rule ar
-        command = llvm-ar rcs $out $in
+        command = {archiver} rcs $out $in
         description = ar $out
       """
     );
@@ -236,21 +237,27 @@ internal class NinjaGenerator : IDisposable {
 
     if (is_current_project && proj.kind == Kind.Dll) {
       _link_flags.Add("-shared");
-      _link_flags.Add("-Wl,/NODEFAULTLIB:libcmt");
-      switch (_ctx.config) {
-        case BuildConfig.Debug:
-          _link_flags.Add("-lmsvcrtd.lib");
-          // _link_flags.Add("-lvcruntimed.lib");
-          // _link_flags.Add("-lucrtd.lib");
-          break;
-        case BuildConfig.Release:
-          _link_flags.Add("-lmsvcrt.lib");
-          // _link_flags.Add("-lvcruntime.lib");
-          // _link_flags.Add("-lucrt.lib");
-          break;
-        default:
-          throw new ArgumentOutOfRangeException();
+      if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+        _link_flags.Add("-Wl,/NODEFAULTLIB:libcmt");
+        switch (_ctx.config) {
+          case BuildConfig.Debug:
+            _link_flags.Add("-lmsvcrtd.lib");
+            // _link_flags.Add("-lvcruntimed.lib");
+            // _link_flags.Add("-lucrtd.lib");
+            break;
+          case BuildConfig.Release:
+            _link_flags.Add("-lmsvcrt.lib");
+            // _link_flags.Add("-lvcruntime.lib");
+            // _link_flags.Add("-lucrt.lib");
+            break;
+          default:
+            throw new ArgumentOutOfRangeException();
+        }
       }
+    }
+
+    if (is_current_project && proj.kind is Kind.Dll or Kind.Exe && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+      _link_flags.Add("-Wl,-rpath,@executable_path");
     }
 
     foreach (var link in proj.link) {
@@ -263,7 +270,8 @@ internal class NinjaGenerator : IDisposable {
         foreach (var lib in projects_with_names(link.libs)) {
           if (lib.kind is Kind.Lib or Kind.Dll) {
             collect_link_flags(lib);
-            _link_libs.Add(Path.Join(_ctx.bin_directory, lib.name.wrap(Kind.Lib)));
+            var kind = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? Kind.Lib : lib.kind;
+            _link_libs.Add(Path.Join(_ctx.bin_directory, lib.name.wrap(kind)));
           } else if (lib.kind is Kind.Iface) {
             collect_link_flags(lib);
           }
@@ -272,11 +280,12 @@ internal class NinjaGenerator : IDisposable {
       }
 
       foreach (var lib in link.libs) {
+        var prefix = lib.EndsWith(".dylib") ? "-Wl," : "-l";
         if ((link.flags & LinkFlags.Sys) != 0) {
-          _link_flags.Add($"-l{lib}");
+          _link_flags.Add(prefix + lib);
         } else {
           var path = Path.Join(proj.depo.dir, lib);
-          _link_flags.Add($"-l{path}");
+          _link_flags.Add(prefix + path);
         }
       }
     }

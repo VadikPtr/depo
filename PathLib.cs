@@ -4,7 +4,7 @@ namespace depo;
 
 public static class PathLib {
   private const string sep_str = "/";
-  private const char   sep     = '/';
+  private const char sep = '/';
 
   public static string join(string first, string second) {
     Debug.Assert(first.Length > 0 && second.Length > 0, "should have dealt with empty paths");
@@ -16,13 +16,13 @@ public static class PathLib {
 
   public static string join(string first, string second, string third) {
     Debug.Assert(first.Length > 0 && second.Length > 0 && third.Length > 0, "should have dealt with empty paths");
-    var first_has_separator  = is_directory_separator(first[^1]) || is_directory_separator(second[0]);
+    var first_has_separator = is_directory_separator(first[^1]) || is_directory_separator(second[0]);
     var second_has_separator = is_directory_separator(second[^1]) || is_directory_separator(third[0]);
     return (first_has_separator, second_has_separator) switch {
       (false, false) => string.Concat(first, sep_str, second, sep_str, third),
-      (false, true)  => string.Concat(first, sep_str, second, third),
-      (true, false)  => string.Concat(first, second, sep_str, third),
-      (true, true)   => string.Concat(first, second, third),
+      (false, true) => string.Concat(first, sep_str, second, third),
+      (true, false) => string.Concat(first, second, sep_str, third),
+      (true, true) => string.Concat(first, second, third),
     };
   }
 
@@ -60,13 +60,23 @@ public static class PathLib {
   private static bool is_directory_separator(char value) => sep == value;
 
   public static string replace_ext_full(string path, string new_ext) {
-    var dir   = parent(path);
-    var name  = Path.GetFileName(path);
+    var dir = parent(path);
+    var name = Path.GetFileName(path);
     var ext_i = name.IndexOf('.');
     if (ext_i == -1) {
       ext_i = name.Length;
     }
     return join(dir, name[..ext_i] + new_ext);
+  }
+
+  public static void unlink(string path) {
+    if (Directory.Exists(path)) {
+      Log.info("Removing directory " + path);
+      Directory.Delete(path, recursive: true);
+    } else if (File.Exists(path)) {
+      Log.info("Removing file " + path);
+      File.Delete(path);
+    }
   }
 }
 

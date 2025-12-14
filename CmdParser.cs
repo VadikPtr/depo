@@ -12,30 +12,36 @@ internal sealed class CmdParser {
 
   public CmdParser parse() {
     var args = Environment.GetCommandLineArgs().Skip(1).ToArray();
-    args = parse_verb(args);
+    var flags = parse_verb(args);
+
     if (actions.Count == 0) {
       actions.Add(CmdAction.Pull);
       actions.Add(CmdAction.Clean);
       actions.Add(CmdAction.Build);
     }
-    foreach (var arg in args) {
-      if (arg.StartsWith("-r")) {
+
+    foreach (var flag in flags) {
+      if (flag.StartsWith("-r")) {
         config = BuildConfig.Release;
-      } else if (arg.StartsWith("-d")) {
+      } else if (flag.StartsWith("-d")) {
         config = BuildConfig.Debug;
+      } else if (flag.StartsWith("-v")) {
+        Log.is_debug = true;
       } else {
-        throw new Exception($"Unknown argument: {arg}");
+        throw new Exception($"Unknown argument: {flag}");
       }
     }
 
-    Console.WriteLine($"Config: {config}");
-    Console.WriteLine($"Actions: {string.Join(',', actions)}");
+    Log.info($"Config: {config}");
+    Log.info($"Actions: {string.Join(',', actions)}");
     return this;
   }
 
   private string[] parse_verb(string[] args) {
+    var other = new List<string>();
     foreach (var arg in args) {
       if (arg.StartsWith('-')) {
+        other.Add(arg);
         continue;
       }
 
@@ -48,9 +54,7 @@ internal sealed class CmdParser {
       } else {
         throw new Exception($"Unknown verb: {arg}");
       }
-
-      return args.Where(x => x != arg).ToArray();
     }
-    return args;
+    return other.ToArray();
   }
 }

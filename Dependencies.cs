@@ -34,10 +34,6 @@ internal class Dependencies {
     Log.info("--- Archive pull {0}", dependency.name);
     string dir = Path.Join(_deps_dir, dependency.name);
 
-    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-      throw new NotImplementedException();
-    }
-
     bool is_same = check_ts_is_same(dir, dependency.url);
     if (is_same) {
       Log.debug("No need to fetch");
@@ -70,15 +66,15 @@ internal class Dependencies {
     Log.info("Unpack archive: {0}", archive_path);
     var dir = Path.GetDirectoryName(archive_path);
 
-    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-      throw new NotImplementedException();
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+      var sz = DepoTool.path_to("7z");
+      Subprocess.run(sz, "x", "-o" + dir, archive_path).check();
+      var tar_path = archive_path.Replace(".xz", "");
+      Subprocess.run(sz, "x", "-o" + dir, tar_path).check();
+      File.Delete(tar_path);
+    } else {
+      Subprocess.run("tar", "xf", archive_path, "-C", dir).check();
     }
-
-    var sz = DepoTool.path_to("7z");
-    Subprocess.run(sz, "x", "-o" + dir, archive_path).check();
-    var tar_path = archive_path.Replace(".xz", "");
-    Subprocess.run(sz, "x", "-o" + dir, tar_path).check();
-    File.Delete(tar_path);
     File.Delete(archive_path);
   }
 
