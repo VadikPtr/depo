@@ -4,15 +4,17 @@ internal enum CmdAction {
   Build,
   Clean,
   Pull,
+  Run,
 }
 
 internal sealed class CmdParser {
   public HashSet<CmdAction> actions = [];
-  public BuildConfig        config  = BuildConfig.Debug;
+  public BuildConfig config = BuildConfig.Debug;
+  public string run_target = null;
 
   public CmdParser parse() {
     var args = Environment.GetCommandLineArgs().Skip(1).ToArray();
-    var flags = parse_verb(args);
+    var (flags, positional) = parse_verb(args);
 
     if (actions.Count == 0) {
       actions.Add(CmdAction.Pull);
@@ -32,16 +34,22 @@ internal sealed class CmdParser {
       }
     }
 
+    if (actions.Contains(CmdAction.Run)) {
+      run_target = positional.Count != 0 ? positional[0] : null;
+    }
+
     Log.info($"Config: {config}");
     Log.info($"Actions: {string.Join(',', actions)}");
     return this;
   }
 
-  private string[] parse_verb(string[] args) {
-    var other = new List<string>();
+  private (List<string> flags, List<string> positional) parse_verb(string[] args) {
+    var flags = new List<string>();
+    var positional = new List<string>();
+
     foreach (var arg in args) {
       if (arg.StartsWith('-')) {
-        other.Add(arg);
+        flags.Add(arg);
         continue;
       }
 
@@ -51,10 +59,14 @@ internal sealed class CmdParser {
         actions.Add(CmdAction.Clean);
       } else if ("pull".StartsWith(arg)) {
         actions.Add(CmdAction.Pull);
+      } else if ("run".StartsWith(arg)) {
+        actions.Add(CmdAction.Build);
+        actions.Add(CmdAction.Run);
       } else {
-        throw new Exception($"Unknown verb: {arg}");
+        positional.Add(arg);
       }
     }
-    return other.ToArray();
+
+    return (flags, positional);
   }
 }
