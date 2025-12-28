@@ -31,7 +31,7 @@ internal sealed partial class Parser(List<string> tokens) {
     _tokens.Dequeue();
 
     var expr = call_expression(head.value, arguments);
-    Log.debug("{0}", expr);
+    // Log.debug("{0}", expr);
     return expr;
   }
 
@@ -64,7 +64,7 @@ internal sealed partial class Parser(List<string> tokens) {
     foreach (Match match in matches) {
       var value = match.Value.Trim();
       if (value.Length != 0) {
-        Log.debug("Token: {0}", value);
+        // Log.debug("Token: {0}", value);
         tokens.Add(value);
       }
     }

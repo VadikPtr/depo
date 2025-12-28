@@ -6,7 +6,7 @@ try {
 #endif
 
 var timer = Stopwatch.StartNew();
-var cmd = new CmdParser().parse();
+var cmd   = new CmdParser().parse();
 
 if (cmd.actions.Contains(CmdAction.Clean)) {
   PathLib.unlink("bin");
@@ -21,7 +21,8 @@ if (cmd.actions.Contains(CmdAction.Pull)) {
 }
 
 if (cmd.actions.Contains(CmdAction.Build)) {
-  var depo = new DepoFile().parse();
+  MsvcContext.enter();
+  var depo  = new DepoFile().parse();
   var ninja = new SolutionContext(depo, cmd.config);
   ninja.generate();
   ninja.dump_compile_commands();

@@ -20,7 +20,7 @@ internal class SolutionContext {
     obj_directory   = Path.Join(build_directory, "obj");
     Directory.CreateDirectory(build_directory);
     Directory.CreateDirectory(obj_directory);
-    Console.WriteLine($"Build directory: {build_directory}");
+    Log.info($"Build directory: {build_directory}");
   }
 
   public void generate() {
@@ -44,17 +44,16 @@ internal class SolutionContext {
   }
 
   public void dump_compile_commands() {
-    Console.WriteLine("Writing compile commands...");
-    var output = Subprocess.run(DepoTool.path_to("ninja"), "-C", Path.Join(build_directory), "-t", "compdb").check();
+    Log.info("Writing compile commands...");
+    var output = Subprocess.run(DepoTool.ninja, "-C", Path.Join(build_directory), "-t", "compdb").check();
     File.WriteAllText("compile_commands.json", output.stdout);
-    // TODO: write and process
-    Console.WriteLine("Writing compile commands finished.");
+    Log.info("Writing compile commands finished.");
   }
 
   public void build() {
-    Console.WriteLine("Running build...");
-    Subprocess.run_console_out(DepoTool.path_to("ninja"), "-C", Path.Join(build_directory), "-v"); // "-d", "explain" 
-    Console.WriteLine("Build finished.");
+    Log.info("Running build...");
+    Subprocess.run_console_out(DepoTool.ninja, "-C", Path.Join(build_directory), "-v"); // "-d", "explain" 
+    Log.info("Build finished.");
   }
 
   private void write_solution_file(List<NinjaGenerator> projects) {

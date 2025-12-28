@@ -29,7 +29,6 @@ D:\src\depo\bin\Release\net10.0\win-x64\publish\depo.exe %*
 - [ ] context aware node gathering
 - [ ] proto generator
 - [ ] run custom commands
-- [ ] msvc dev environment
 - [ ] automation script for installing depo
 
 ## Examples

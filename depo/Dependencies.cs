@@ -67,10 +67,9 @@ internal class Dependencies {
     var dir = Path.GetDirectoryName(archive_path);
 
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-      var sz = DepoTool.path_to("7z");
-      Subprocess.run(sz, "x", "-o" + dir, archive_path).check();
+      Subprocess.run(DepoTool.sz, "x", "-o" + dir, archive_path).check();
       var tar_path = archive_path.Replace(".xz", "");
-      Subprocess.run(sz, "x", "-o" + dir, tar_path).check();
+      Subprocess.run(DepoTool.sz, "x", "-o" + dir, tar_path).check();
       File.Delete(tar_path);
     } else {
       Subprocess.run("tar", "xf", archive_path, "-C", dir).check();
