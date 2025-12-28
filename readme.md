@@ -10,20 +10,27 @@ dotnet publish -c Release
 
 In `C:/bin` or `~/.local/bin` (in $PATH) add file:
 
-depo.bat
+`depo.bat`:
 
 ```batch
 @echo off
 D:\src\depo\bin\Release\net10.0\win-x64\publish\depo.exe %*
 ```
 
-depo
+`depo`:
 
 ```shell
 /d/src/depo/bin/Release/net10.0/win-x64/publish/depo.exe $@
 ```
 
-Soon I will add automatic installation script.
+## Todo:
+
+- [ ] split ast building and converting nodes
+- [ ] context aware node gathering
+- [ ] proto generator
+- [ ] run custom commands
+- [ ] msvc dev environment
+- [ ] automation script for installing depo
 
 ## Examples
 
@@ -81,15 +88,7 @@ Top level project definition (executable):
   (kind exe)
   (files lalia/*.cpp)
   (include lalia)
-  (link 'prj
-    cc
-    clay
-    dxtex
-    fontbake
-    gns
-    nvtt
-    sdl3
-    gapi)
+  (link 'prj cc clay dxtex fontbake gns nvtt sdl3 gapi)
 )
 
 (targets lalia)
