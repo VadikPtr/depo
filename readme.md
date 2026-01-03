@@ -25,8 +25,6 @@ D:\src\depo\bin\Release\net10.0\win-x64\publish\depo.exe %*
 
 ## Todo:
 
-- [ ] split ast building and converting nodes
-- [ ] context aware node gathering
 - [ ] proto generator
 - [ ] run custom commands
 - [ ] automation script for installing depo

@@ -52,7 +52,11 @@ internal class DepoFile {
     try {
       Log.debug("Parsing {0}", path);
       string text = File.ReadAllText(path);
-      return Parser.parse(text);
+      var root = AstParser.parse(text);
+      if (root.value != "depo") {
+        throw new Exception($"Expected root value {root.value} to be 'depo'");
+      }
+      return new DepoAction(root.children);
     } catch (Exception ex) {
       Log.error($"Error: failed to parse {path}. {ex.Message}");
       return null;
