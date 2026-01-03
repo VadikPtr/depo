@@ -1,6 +1,14 @@
 ﻿# depo
 
-Dependency manager and meta-build system for C/C++ on top of ninja
+Dependency manager and meta-build system for C/C++ on top of ninja and clang.
+
+Features:
+- Supported platforms: Windows, macOS. Note: for Windows it is required to have clang installed via Visual Studio Installer.
+- Integrates with any editor with support of clangd via `compile_commands.json` file. It creates automatically on build stage.
+- Clones dependencies recursively through git, svn, http tar.xz archive.
+- For tar.xz archive dependencies supports timestamps, so it will not be pulled again if no changes.
+- Very fast startup cost. On Windows when no file has changed, build will run in 80 milliseconds.
+- When projects links with another project, it will automatically pull public flags and linkage (similar to CMake behavior).
 
 ## Build
 
@@ -22,6 +30,19 @@ D:\src\depo\bin\Release\net10.0\win-x64\publish\depo.exe %*
 ```shell
 /d/src/depo/bin/Release/net10.0/win-x64/publish/depo.exe $@
 ```
+
+## Usage
+
+In directory make `depo.lisp` file. See [Examples](#Examples) section for more details.
+
+Run:
+
+- `depo` - it will pull deps, clean working directory, build solution.
+- `depo build` - build solution (default debug config).
+- `depo build -r` - build solution in release config.
+- `depo run` - build and run current workspace target.
+- `depo clean` - remove build files.
+- `depo pull` - initialize/update dependencies to actual versions.
 
 ## Todo:
 
@@ -53,7 +74,7 @@ Pre-built DLL interface library with auto copy DLL to final binary directory:
   (link 'iface 'win lib/dxtex.lib)
 )
 
-(bin 'win lib/dxtex.dll)
+(bin 'win lib/dxtex.dll)  ;; this file will be auto copied to bin dir
 ```
 
 Top level project definition (executable):
@@ -69,7 +90,7 @@ Top level project definition (executable):
   (svn lalia-data svn://some-svn-repo.ru/lalia-data)
 )
 
-(require
+(require  ;; similar to add_subdirectory in CMake
   deps/cc
   deps/clay
   deps/dxtex
