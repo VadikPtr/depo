@@ -8,9 +8,10 @@ internal enum CmdAction {
 }
 
 internal sealed class CmdParser {
-  public HashSet<CmdAction> actions = [];
-  public BuildConfig config = BuildConfig.Debug;
-  public string run_target = null;
+  public readonly HashSet<CmdAction> actions = [];
+  public          BuildConfig        config  = BuildConfig.Debug;
+  public          string             run_target;
+  public          string[]           run_target_args = [];
 
   public CmdParser parse() {
     var args = Environment.GetCommandLineArgs().Skip(1).ToArray();
@@ -35,7 +36,8 @@ internal sealed class CmdParser {
     }
 
     if (actions.Contains(CmdAction.Run)) {
-      run_target = positional.Count != 0 ? positional[0] : null;
+      run_target      = positional.Count != 0 ? positional[0] : null;
+      run_target_args = positional.Skip(1).ToArray();
     }
 
     Log.info($"Config: {config}");
@@ -44,12 +46,16 @@ internal sealed class CmdParser {
   }
 
   private (List<string> flags, List<string> positional) parse_verb(string[] args) {
-    var flags = new List<string>();
+    var flags      = new List<string>();
     var positional = new List<string>();
 
     foreach (var arg in args) {
       if (arg.StartsWith('-')) {
-        flags.Add(arg);
+        if (actions.Contains(CmdAction.Run)) {
+          positional.Add(arg);
+        } else {
+          flags.Add(arg);
+        }
         continue;
       }
 

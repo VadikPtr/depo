@@ -1,14 +1,14 @@
 ﻿# depo
 
-Dependency manager and meta-build system for C/C++ on top of ninja and clang.
+Dependency manager and build system for C/C++ on top of ninja and clang.
 
 Features:
-- Supported platforms: Windows, macOS. Note: for Windows it is required to have clang installed via Visual Studio Installer.
-- Integrates with any editor with support of clangd via `compile_commands.json` file. It creates automatically on build stage.
-- Clones dependencies recursively through git, svn, http tar.xz archive.
+- Supported Windows and macOS. Note: for Windows it is required to have clang installed via Visual Studio Installer.
+- Integrates with any editor with support of clangd with `compile_commands.json` file. It will be created/updated automatically on build stage.
+- Clones dependencies recursively with git, svn, https tar.xz archive.
 - For tar.xz archive dependencies supports timestamps, so it will not be pulled again if no changes.
-- Very fast startup cost. On Windows when no file has changed, build will run in 80 milliseconds.
-- When projects links with another project, it will automatically pull public flags and linkage (similar to CMake behavior).
+- Very fast startup. On Windows when no file has changed, build will run in 80 milliseconds.
+- When project links with another project, it will automatically pull public flags, link libraries, include dirs (similar to CMake behavior).
 
 ## Build
 
@@ -33,14 +33,16 @@ D:\src\depo\bin\Release\net10.0\win-x64\publish\depo.exe %*
 
 ## Usage
 
-In directory make `depo.lisp` file. See [Examples](#Examples) section for more details.
+In directory create `depo.lisp` file. See [Examples](#Examples) section for more details about its content.
 
 Run:
 
 - `depo` - it will pull deps, clean working directory, build solution.
 - `depo build` - build solution (default debug config).
 - `depo build -r` - build solution in release config.
-- `depo run` - build and run current workspace target.
+- `depo run` - build solution and run first workspace target.
+- `depo run amogus` - build solution and run target named `amogus`.
+- `depo run amogus some arg` - build solution and run target named `amogus` with arguments `some arg`.
 - `depo clean` - remove build files.
 - `depo pull` - initialize/update dependencies to actual versions.
 

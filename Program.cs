@@ -38,7 +38,8 @@ if (cmd.actions.Contains(CmdAction.Run)) {
   if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
     path += ".exe";
   }
-  Subprocess.run_console_out(path);
+  string[] console_args = [path, .. cmd.run_target_args];
+  Subprocess.run_console_out(console_args);
 }
 
 Log.info("Done! {0}", timer.Elapsed);
