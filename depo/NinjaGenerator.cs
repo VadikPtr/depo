@@ -237,25 +237,34 @@ internal class NinjaGenerator : IDisposable {
   private void collect_link_flags(ProjectM proj) {
     bool is_current_project = proj == _project;
 
-    if (is_current_project && proj.kind == Kind.Dll) {
-      _link_flags.Add("-shared");
+    if (is_current_project && proj.kind is Kind.Dll or Kind.Exe) {
+      if (proj.kind is Kind.Dll) {
+        _link_flags.Add("-shared");
+      }
       if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
         _link_flags.Add("-Wl,/NODEFAULTLIB:libcmt");
+        _link_flags.Add("-Wl,/NODEFAULTLIB:libcmtd");
+        _link_flags.Add("-Wl,/NODEFAULTLIB:msvcrtd");
+        _link_flags.Add("-Wl,/NODEFAULTLIB:msvcrt");
         switch (_ctx.config) {
           case BuildConfig.Debug:
             _link_flags.Add("-lmsvcrtd.lib");
-            // _link_flags.Add("-lvcruntimed.lib");
-            // _link_flags.Add("-lucrtd.lib");
+            _link_flags.Add("-lucrtd.lib");
+            // _link_flags.Add("-llibcmtd.lib");
             break;
           case BuildConfig.Release:
             _link_flags.Add("-lmsvcrt.lib");
-            // _link_flags.Add("-lvcruntime.lib");
-            // _link_flags.Add("-lucrt.lib");
+            _link_flags.Add("-lucrt.lib");
+            // _link_flags.Add("-llibcmt.lib");
             break;
           default:
             throw new ArgumentOutOfRangeException();
         }
       }
+    }
+
+    if (is_current_project && proj.kind == Kind.Exe && _ctx.config == BuildConfig.Release) {
+      _link_flags.Add("-flto");
     }
 
     if (is_current_project && proj.kind is Kind.Dll or Kind.Exe && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
