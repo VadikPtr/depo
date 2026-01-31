@@ -133,7 +133,7 @@ internal class NinjaGenerator : IDisposable {
     _writer.Write(
       $"""
       rule link
-        command = clang++ {flags} -o $linked $in
+        command = clang++ -o $linked $in {flags}
         description = link $out
       """
     );
@@ -305,6 +305,9 @@ internal class NinjaGenerator : IDisposable {
 
       foreach (var lib in link.libs) {
         var prefix = lib.EndsWith(".dylib") ? "-Wl," : "-l";
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+          prefix = "";
+        }
         if ((link.flags & LinkFlags.Sys) != 0) {
           _link_flags.Add(prefix + lib);
         } else {
