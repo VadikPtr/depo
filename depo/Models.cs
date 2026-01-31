@@ -38,14 +38,17 @@ internal record CFlags(VisibilityFlags flags, string[] values);
 
 internal record Link(VisibilityFlags visibility, LinkFlags flags, string[] libs);
 
+internal record LinkDir(VisibilityFlags visibility, string[] dirs);
+
 internal class ProjectM {
   [JsonIgnore] public DepoM         depo;
   public              string        name;
   public              Kind          kind;
-  public              List<string>  files   = [];
-  public              List<Include> include = [];
-  public              List<Link>    link    = [];
-  public              List<CFlags>  cflags  = [];
+  public              List<string>  files     = [];
+  public              List<Include> include   = [];
+  public              List<Link>    link      = [];
+  public              List<LinkDir> link_dirs = [];
+  public              List<CFlags>  cflags    = [];
 }
 
 internal class DependencyM {
@@ -54,15 +57,21 @@ internal class DependencyM {
   public string branch;
 }
 
+internal class CustomCommandM {
+  public string   name;
+  public string[] args;
+}
+
 internal class DepoM {
-  public string            dir;
-  public string[]          require      = [];
-  public string[]          targets      = [];
-  public List<string>      bin          = [];
-  public List<ProjectM>    projects     = [];
-  public List<DependencyM> git_deps     = [];
-  public List<DependencyM> svn_deps     = [];
-  public List<DependencyM> archive_deps = [];
+  public string               dir;
+  public string[]             require         = [];
+  public string[]             targets         = [];
+  public List<string>         bin             = [];
+  public List<ProjectM>       projects        = [];
+  public List<DependencyM>    git_deps        = [];
+  public List<DependencyM>    svn_deps        = [];
+  public List<DependencyM>    archive_deps    = [];
+  public List<CustomCommandM> custom_commands = [];
 }
 
 internal interface IDepoMAction {
@@ -127,6 +136,19 @@ internal class LinkAction(AstNode[] args) : IProjectMAction {
   }
 }
 
+internal class LinkDirAction(AstNode[] args) : IProjectMAction {
+  public void execute(ProjectM model) {
+    if (!args.check_os_flags()) {
+      return;
+    }
+    var dirs = args.unpack_as_string_array_skip_flags()
+      .Select(x => Path.Join(model.depo.dir, x))
+      .ToArray();
+    var visibility = args.parse_flags<VisibilityFlags>();
+    model.link_dirs.Add(new LinkDir(visibility, dirs));
+  }
+}
+
 internal class CFlagsAction(AstNode[] args) : IProjectMAction {
   public void execute(ProjectM model) {
     if (!args.check_os_flags()) {
@@ -150,9 +172,10 @@ internal class ProjectAction : IDepoMAction {
         case "files": _actions.Add(new FilesAction(node.children)); break;
         case "include":
         case "inc": _actions.Add(new IncludeAction(node.children)); break;
-        case "link":  _actions.Add(new LinkAction(node.children)); break;
-        case "flags": _actions.Add(new CFlagsAction(node.children)); break;
-        default:      throw new Exception($"Unexpected node for project: {node.value}");
+        case "link":      _actions.Add(new LinkAction(node.children)); break;
+        case "link-dirs": _actions.Add(new LinkDirAction(node.children)); break;
+        case "flags":     _actions.Add(new CFlagsAction(node.children)); break;
+        default:          throw new Exception($"Unexpected node for project: {node.value}");
       }
     }
   }
@@ -254,6 +277,22 @@ internal class BinAction(AstNode[] args) : IDepoMAction {
   }
 }
 
+internal class CustomCommandAction(AstNode[] args) : IDepoMAction {
+  public void execute(DepoM model) {
+    if (!args.check_os_flags()) {
+      Log.debug("Check os failed");
+      return;
+    }
+    var str_args = args.unpack_as_string_array_skip_flags();
+    if (str_args.Length < 2) {
+      throw new Exception("Bad cmd arguments. Expected at least name and program to run");
+    }
+    var name     = str_args[0];
+    var run_args = str_args.Skip(1).ToArray();
+    model.custom_commands.Add(new CustomCommandM { name = name, args = run_args });
+  }
+}
+
 internal class DepoAction {
   private readonly List<IDepoMAction> _actions = [];
 
@@ -265,6 +304,7 @@ internal class DepoAction {
         "targets" => new TargetsAction(arg.children),
         "deps"    => new DepsAction(arg.children),
         "bin"     => new BinAction(arg.children),
+        "cmd"     => new CustomCommandAction(arg.children),
         _         => throw new Exception($"Unexpected node for depo: {arg.value}"),
       };
       _actions.Add(node);

@@ -3,12 +3,12 @@
 Dependency manager and build system for C/C++ on top of ninja and clang.
 
 Features:
-- Supported Windows and macOS. Note: for Windows it is required to have clang installed via Visual Studio Installer.
+- Supports Windows and macOS. Note: for Windows it is required to have clang installed via Visual Studio Installer.
 - Integrates with any editor with support of clangd with `compile_commands.json` file. It will be created/updated automatically on build stage.
 - Clones dependencies recursively with git, svn, https tar.xz archive.
 - For tar.xz archive dependencies supports timestamps, so it will not be pulled again if no changes.
 - Very fast startup. On Windows when no file has changed, build will run in 80 milliseconds.
-- When project links with another project, it will automatically pull public flags, link libraries, include dirs (similar to CMake behavior).
+- When project links with another project, it automatically pulls public flags, link libraries, include dirs (similar to CMake behavior).
 
 ## Build
 
@@ -48,9 +48,9 @@ Run:
 
 ## Todo:
 
-- [ ] proto generator
-- [ ] run custom commands
-- [ ] automation script for installing depo
+- proto generator
+- automation script for installing depo
+- recursive deps
 
 ## Examples
 
@@ -79,9 +79,12 @@ Pre-built DLL interface library with auto copy DLL to final binary directory:
 (bin 'win lib/dxtex.dll)  ;; this file will be auto copied to bin dir
 ```
 
+> Also note, paths are always relative to current `depo.lisp` file.
+
 Top level project definition (executable):
 
 ```lisp
+;; these dependencies will be cloned to %workspace%/deps folder
 (deps
   (git cc git@github.com:VadikPtr/rebus.git)
   (archive sdl3 https://some-binary-server.ru/sdl3-{os}.tar.xz)
@@ -92,7 +95,8 @@ Top level project definition (executable):
   (svn lalia-data svn://some-svn-repo.ru/lalia-data)
 )
 
-(require  ;; similar to add_subdirectory in CMake
+;; similar to add_subdirectory in CMake
+(require
   deps/cc
   deps/clay
   deps/dxtex

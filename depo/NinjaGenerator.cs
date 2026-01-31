@@ -59,8 +59,10 @@ internal class NinjaGenerator : IDisposable {
         break;
       }
       case Kind.Dll: {
-        var implib = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? project_output_files(_project.name, Kind.Lib) : "";
-        var libs   = string.Join(" $\n  ", _link_libs.Select(x => x.path_escape_ninja()));
+        var implib = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+          ? project_output_files(_project.name, Kind.Lib)
+          : "";
+        var libs = string.Join(" $\n  ", _link_libs.Select(x => x.path_escape_ninja()));
         _writer.Write($"build {output_path} {implib}: link {objs} {libs}\n");
         _writer.Write($"  linked = {output_path}\n\n");
         break;
@@ -103,7 +105,7 @@ internal class NinjaGenerator : IDisposable {
 
   private void write_compile_rules() {
     var cflags_str = string.Join(' ', _cflags);
-    var archiver = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "llvm-ar" : "ar";
+    var archiver   = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "llvm-ar" : "ar";
     _writer.Write(
       $"""
       rule cc
@@ -258,6 +260,19 @@ internal class NinjaGenerator : IDisposable {
 
     if (is_current_project && proj.kind is Kind.Dll or Kind.Exe && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
       _link_flags.Add("-Wl,-rpath,@executable_path");
+    }
+
+    foreach (var dir in proj.link_dirs) {
+      bool is_shared = dir.visibility != VisibilityFlags.None;
+      if (!is_current_project && !is_shared) {
+        continue;
+      }
+      if (is_current_project && (dir.visibility & VisibilityFlags.Iface) != 0) {
+        continue;
+      }
+      foreach (var value in dir.dirs) {
+        _link_flags.Add($"-L{value}");
+      }
     }
 
     foreach (var link in proj.link) {

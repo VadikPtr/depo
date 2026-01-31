@@ -29,10 +29,11 @@ internal class DepoFile {
       the_depo.projects.AddRange(model.projects);
       the_depo.bin.AddRange(model.bin);
       if (dir == _root_dir) {
-        the_depo.targets      = model.targets;
-        the_depo.archive_deps = model.archive_deps;
-        the_depo.git_deps     = model.git_deps;
-        the_depo.svn_deps     = model.svn_deps;
+        the_depo.targets         = model.targets;
+        the_depo.archive_deps    = model.archive_deps;
+        the_depo.git_deps        = model.git_deps;
+        the_depo.svn_deps        = model.svn_deps;
+        the_depo.custom_commands = model.custom_commands;
       }
 
       foreach (var require in model.require) {
@@ -52,7 +53,7 @@ internal class DepoFile {
     try {
       Log.debug("Parsing {0}", path);
       string text = File.ReadAllText(path);
-      var root = AstParser.parse(text);
+      var    root = AstParser.parse(text);
       if (root.value != "depo") {
         throw new Exception($"Expected root value {root.value} to be 'depo'");
       }

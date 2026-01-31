@@ -5,6 +5,7 @@ internal enum CmdAction {
   Clean,
   Pull,
   Run,
+  Cmd,
 }
 
 internal sealed class CmdParser {
@@ -35,7 +36,7 @@ internal sealed class CmdParser {
       }
     }
 
-    if (actions.Contains(CmdAction.Run)) {
+    if (actions.Contains(CmdAction.Run) || actions.Contains(CmdAction.Cmd)) {
       run_target      = positional.Count != 0 ? positional[0] : null;
       run_target_args = positional.Skip(1).ToArray();
     }
@@ -46,12 +47,18 @@ internal sealed class CmdParser {
   }
 
   private (List<string> flags, List<string> positional) parse_verb(string[] args) {
-    var flags      = new List<string>();
-    var positional = new List<string>();
+    var  flags             = new List<string>();
+    var  positional        = new List<string>();
+    bool record_positional = false;
 
     foreach (var arg in args) {
+      if (arg == "--") {
+        record_positional = true;
+        continue;
+      }
+
       if (arg.StartsWith('-')) {
-        if (actions.Contains(CmdAction.Run)) {
+        if (record_positional) {
           positional.Add(arg);
         } else {
           flags.Add(arg);
@@ -63,6 +70,8 @@ internal sealed class CmdParser {
         actions.Add(CmdAction.Build);
       } else if ("clean".StartsWith(arg)) {
         actions.Add(CmdAction.Clean);
+      } else if ("cmd".StartsWith(arg)) {
+        actions.Add(CmdAction.Cmd);
       } else if ("pull".StartsWith(arg)) {
         actions.Add(CmdAction.Pull);
       } else if ("run".StartsWith(arg)) {

@@ -55,6 +55,8 @@ public record SubprocessResult {
 }
 
 public static class Subprocess {
+  private static Process current_process;
+
   public static SubprocessResult run(params string[] command) {
     using Process process     = new Process();
     var           file_name   = find_exe(command[0]);
@@ -73,7 +75,9 @@ public static class Subprocess {
     process.Start();
     var stdout = process.StandardOutput.ReadToEnd();
     var stderr = process.StandardError.ReadToEnd();
+    current_process = process;
     process.WaitForExit();
+    current_process = null;
     return new SubprocessResult {
       command = commandline,
       stdout  = stdout,
@@ -109,9 +113,11 @@ public static class Subprocess {
       }
     };
     process.Start();
+    current_process = process;
     process.BeginOutputReadLine();
     process.BeginErrorReadLine();
     process.WaitForExit();
+    current_process = null;
     if (process.ExitCode != 0) {
       throw new Exception($"Run '{commandline}' failed with exit code {process.ExitCode}");
     }
@@ -134,5 +140,12 @@ public static class Subprocess {
       }
     }
     throw new Exception($"Cannot find {name}");
+  }
+
+  public static void kill_current() {
+    if (current_process is not { HasExited: false }) {
+      return;
+    }
+    current_process.Kill(entireProcessTree: true);
   }
 }

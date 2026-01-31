@@ -68,7 +68,7 @@ internal class Dependencies {
 
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
       Subprocess.run(DepoTool.sz, "x", "-o" + dir, archive_path).check();
-      var tar_path = archive_path.Replace(".xz", "");
+      var tar_path = archive_path.Replace(".xz", "").Replace(".gz", "");
       Subprocess.run(DepoTool.sz, "x", "-o" + dir, tar_path).check();
       File.Delete(tar_path);
     } else {

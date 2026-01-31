@@ -6,6 +6,8 @@ using depo;
 try {
 #endif
 
+Console.CancelKeyPress += (s, e) => { Subprocess.kill_current(); };
+
 var timer = Stopwatch.StartNew();
 var cmd   = new CmdParser().parse();
 
@@ -17,7 +19,7 @@ if (cmd.actions.Contains(CmdAction.Clean)) {
 
 if (cmd.actions.Contains(CmdAction.Pull)) {
   var depo_deps = new DepoFile().parse();
-  var deps = new Dependencies(depo_deps);
+  var deps      = new Dependencies(depo_deps);
   deps.pull();
 }
 
@@ -34,11 +36,23 @@ if (cmd.actions.Contains(CmdAction.Build)) {
 
 if (cmd.actions.Contains(CmdAction.Run)) {
   var target = cmd.run_target ?? depo.targets[0];
-  var path = Path.Join("bin", cmd.config.ToString(), target);
+  var path   = Path.Join("bin", cmd.config.ToString(), target);
   if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
     path += ".exe";
   }
   string[] console_args = [path, .. cmd.run_target_args];
+  Subprocess.run_console_out(console_args);
+}
+
+if (cmd.actions.Contains(CmdAction.Cmd)) {
+  var command = depo.custom_commands.FirstOrDefault(x => x.name == cmd.run_target);
+  if (command == null) {
+    throw new Exception(
+      $"Command not found: {cmd.run_target}. " +
+      $"Available commands: {string.Join(',', depo.custom_commands.Select(y => y.name))}"
+    );
+  }
+  string[] console_args = [.. command.args, .. cmd.run_target_args];
   Subprocess.run_console_out(console_args);
 }
 
