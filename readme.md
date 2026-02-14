@@ -44,6 +44,7 @@ Run:
 - `depo run amogus` - build solution and run target named `amogus`.
 - `depo run amogus some arg` - build solution and run target named `amogus` with arguments `some arg`.
 - `depo clean` - remove build files.
+- `depo vscode` - write some vscode settings files.
 - `depo pull` - initialize/update dependencies to actual versions.
 
 ## Todo:

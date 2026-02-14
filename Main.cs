@@ -34,6 +34,10 @@ if (cmd.actions.Contains(CmdAction.Build)) {
   FileCopy.copy_binary_files(depo, ninja.bin_directory);
 }
 
+if (cmd.actions.Contains(CmdAction.VsCode)) {
+  VsCode.generate(depo, cmd.config);
+}
+
 if (cmd.actions.Contains(CmdAction.Run)) {
   var target = cmd.run_target ?? depo.targets[0];
   var path   = Path.Join("bin", cmd.config.ToString(), target);

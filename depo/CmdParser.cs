@@ -6,6 +6,7 @@ internal enum CmdAction {
   Pull,
   Run,
   Cmd,
+  VsCode,
 }
 
 internal sealed class CmdParser {
@@ -74,6 +75,8 @@ internal sealed class CmdParser {
         actions.Add(CmdAction.Cmd);
       } else if ("pull".StartsWith(arg)) {
         actions.Add(CmdAction.Pull);
+      } else if ("vscode".StartsWith(arg)) {
+        actions.Add(CmdAction.VsCode);
       } else if ("run".StartsWith(arg)) {
         actions.Add(CmdAction.Build);
         actions.Add(CmdAction.Run);

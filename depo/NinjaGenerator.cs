@@ -161,6 +161,9 @@ internal class NinjaGenerator : IDisposable {
         _cflags.Add("-O0");
         _cflags.Add("-DDEBUG");
         _cflags.Add("-D_DEBUG");
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+          _cflags.Add("-gcodeview"); // -Xclang 
+        }
         break;
       case BuildConfig.Release:
         _cflags.Add("-O3");
@@ -265,6 +268,18 @@ internal class NinjaGenerator : IDisposable {
 
     if (is_current_project && proj.kind == Kind.Exe && _ctx.config == BuildConfig.Release) {
       _link_flags.Add("-flto");
+    }
+
+    if (proj.kind is Kind.Exe or Kind.Dll && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+      _link_flags.Add("-fuse-ld=lld-link");
+    }
+
+    if (proj.kind is Kind.Exe or Kind.Dll && _ctx.config == BuildConfig.Debug &&
+        RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+      var pdb = Path.Join(_ctx.bin_directory, $"{proj.name}.pdb").path_escape_ninja();
+      _link_flags.Add("-g");
+      _link_flags.Add("-Xclang gcodeview");
+      _link_flags.Add($"-Xlinker /pdb:{pdb}");
     }
 
     if (is_current_project && proj.kind is Kind.Dll or Kind.Exe && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
