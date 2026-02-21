@@ -323,6 +323,9 @@ internal class NinjaGenerator : IDisposable {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
           prefix = "";
         }
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+          prefix = "";
+        }
         if ((link.flags & LinkFlags.Sys) != 0) {
           _link_flags.Add(prefix + lib);
         } else {
