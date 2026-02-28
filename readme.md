@@ -16,19 +16,18 @@ Features:
 dotnet publish -c Release
 ```
 
-In `C:/bin` or `~/.local/bin` (in $PATH) add file:
-
-`depo.bat`:
-
 ```batch
+@rem depo.bat
 @echo off
 D:\src\depo\bin\Release\net10.0\win-x64\publish\depo.exe %*
 ```
 
-`depo`:
+In linux/macos run lines from repo root (make sure ~/.local/bin is in $PATH):
 
 ```shell
-/d/src/depo/bin/Release/net10.0/win-x64/publish/depo.exe $@
+dotnet publish -c Release
+echo "`realpath $(find bin/Release -type f -perm +111 -name depo | grep publish | head -n1)` \$@" > ~/.local/bin/depo
+chmod +x ~/.local/bin/depo
 ```
 
 ## Usage
