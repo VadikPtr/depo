@@ -12,21 +12,32 @@ Features:
 
 ## Build
 
+### Windows
+
 ```bash
 dotnet publish -c Release
 ```
 
+create `depo.bat` somewhere in $PATH (I prefer C:\bin) with contents:
+
 ```batch
-@rem depo.bat
 @echo off
 D:\src\depo\bin\Release\net10.0\win-x64\publish\depo.exe %*
 ```
 
-In linux/macos run lines from repo root (make sure ~/.local/bin is in $PATH):
+### macOS
 
 ```shell
 dotnet publish -c Release
 echo "`realpath $(find bin/Release -type f -perm +111 -name depo | grep publish | head -n1)` \$@" > ~/.local/bin/depo
+chmod +x ~/.local/bin/depo
+```
+
+### Linux
+
+```shell
+dotnet publish -c Release
+echo "`realpath $(find bin/Release -type f -executable -name depo | grep publish | head -n1)` \$@" > ~/.local/bin/depo
 chmod +x ~/.local/bin/depo
 ```
 
