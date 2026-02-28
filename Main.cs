@@ -6,6 +6,8 @@ using depo;
 try {
 #endif
 
+Environment.SetEnvironmentVariable("CLICOLOR_FORCE", "1"); // force ninja to colored output
+ConsoleHelper.enable_virtual_terminal();
 Console.CancelKeyPress += (s, e) => { Subprocess.kill_current(); };
 
 var timer = Stopwatch.StartNew();

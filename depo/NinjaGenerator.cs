@@ -151,6 +151,9 @@ internal class NinjaGenerator : IDisposable {
   }
 
   private void collect_cflags() {
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+      _cflags.Add("-fansi-escape-codes");
+    }
     _cflags.Add("-fdiagnostics-color=always");
     _cflags.Add("--write-dependencies"); // Write a depfile containing user and system headers 
     _cflags.Add("-MP"); // Create phony target for each dependency (other than main file)
@@ -241,6 +244,7 @@ internal class NinjaGenerator : IDisposable {
     bool is_current_project = proj == _project;
 
     if (is_current_project && proj.kind is Kind.Dll or Kind.Exe) {
+      _link_flags.Add("-fdiagnostics-color=always");
       if (proj.kind is Kind.Dll) {
         _link_flags.Add("-shared");
       }
@@ -271,6 +275,7 @@ internal class NinjaGenerator : IDisposable {
     }
 
     if (proj.kind is Kind.Exe or Kind.Dll && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+      _link_flags.Add("-fansi-escape-codes");
       _link_flags.Add("-fuse-ld=lld-link");
     }
 
