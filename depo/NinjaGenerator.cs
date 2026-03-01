@@ -8,9 +8,10 @@ internal class NinjaGenerator : IDisposable {
   private readonly SolutionContext _ctx;
   private readonly FileStream      _stream;
   private readonly StreamWriter    _writer;
-  private readonly HashSet<string> _link_libs  = [];
-  private readonly HashSet<string> _link_flags = [];
-  private readonly HashSet<string> _cflags     = [];
+  private readonly HashSet<string> _linker_inputs = [];
+  private readonly HashSet<string> _link_flags    = [];
+  private readonly HashSet<string> _link_libs     = [];
+  private readonly HashSet<string> _cflags        = [];
 
   public NinjaGenerator(ProjectM project, SolutionContext ctx) {
     project_file = Path.Join(ctx.build_directory, $"{project.name}.ninja");
@@ -48,23 +49,37 @@ internal class NinjaGenerator : IDisposable {
       _writer.Write($"build {dst}: {rule} {src}\n");
     }
 
-    var objs = string.Join(" $\n  ", file_targets.Select(x => x.dst));
+    var objs = string.Join(" $\n    ", file_targets.Select(x => x.dst));
     _writer.Write("\n");
 
     switch (_project.kind) {
       case Kind.Exe: {
-        var libs = string.Join(" $\n  ", _link_libs.Select(x => x.path_escape_ninja()));
-        _writer.Write($"build {output_path}: link {objs} {libs}\n");
-        _writer.Write($"  linked = {output_path}\n\n");
+        var libs = string.Join(" $\n    ", _linker_inputs.Select(x => x.path_escape_ninja()));
+        _writer.Write(
+          $"""
+          build {output_path}: link $
+              {objs} $
+              {libs}
+            linked = {output_path}
+
+          """
+        );
         break;
       }
       case Kind.Dll: {
         var implib = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
           ? project_output_files(_project.name, Kind.Lib)
           : "";
-        var libs = string.Join(" $\n  ", _link_libs.Select(x => x.path_escape_ninja()));
-        _writer.Write($"build {output_path} {implib}: link {objs} {libs}\n");
-        _writer.Write($"  linked = {output_path}\n\n");
+        var libs = string.Join(" $\n    ", _linker_inputs.Select(x => x.path_escape_ninja()));
+        _writer.Write(
+          $"""
+          build {output_path} {implib}: link $
+              {objs} $
+              {libs}
+            linked = {output_path}
+
+          """
+        );
         break;
       }
       case Kind.Lib:
@@ -72,7 +87,7 @@ internal class NinjaGenerator : IDisposable {
         break;
     }
 
-    _writer.Write($"build {_project.name}: phony {output_path}\n\n");
+    _writer.Write($"\nbuild {_project.name}: phony {output_path}\n\n");
   }
 
   private string get_obj_path(string source_path) {
@@ -104,18 +119,20 @@ internal class NinjaGenerator : IDisposable {
   }
 
   private void write_compile_rules() {
-    var cflags_str = string.Join(' ', _cflags);
+    var cflags_str = string.Join(" $\n    ", _cflags);
     var archiver   = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "llvm-ar" : "ar";
     _writer.Write(
       $"""
       rule cc
-        command = clang {cflags_str} -std=c11 -x c -MF $out.d -c -o $out $in
+        command = clang {cflags_str} $
+          -std=c11 -x c -MF $out.d -c -o $out $in
         description = cc $out
         deps = gcc
         depfile = $out.d
 
       rule cxx
-        command = clang++ {cflags_str} -std=c++20 -x c++ -MF $out.d -c -o $out $in
+        command = clang++ {cflags_str} $
+          -std=c++20 -x c++ -MF $out.d -c -o $out $in
         description = cxx $out
         deps = gcc
         depfile = $out.d
@@ -129,11 +146,22 @@ internal class NinjaGenerator : IDisposable {
   }
 
   private void write_link_rules() {
-    var flags = string.Join(' ', _link_flags);
+    List<string> lines = ["clang++ -o $linked"];
+    lines.AddRange(_link_flags);
+    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+      lines.Add("-Wl,--start-group");
+    }
+    lines.Add("$in");
+    lines.AddRange(_link_libs);
+    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+      lines.Add("-Wl,--end-group");
+    }
+    var command = string.Join(" $\n    ", lines);
+
     _writer.Write(
       $"""
       rule link
-        command = clang++ -o $linked {flags} -Wl,--start-group $in -Wl,--end-group
+        command = {command}
         description = link $out
       """
     );
@@ -255,13 +283,13 @@ internal class NinjaGenerator : IDisposable {
         _link_flags.Add("-Wl,/NODEFAULTLIB:msvcrt");
         switch (_ctx.config) {
           case BuildConfig.Debug:
-            _link_flags.Add("-lmsvcrtd.lib");
-            _link_flags.Add("-lucrtd.lib");
+            _link_libs.Add("-lmsvcrtd.lib");
+            _link_libs.Add("-lucrtd.lib");
             // _link_flags.Add("-llibcmtd.lib");
             break;
           case BuildConfig.Release:
-            _link_flags.Add("-lmsvcrt.lib");
-            _link_flags.Add("-lucrt.lib");
+            _link_libs.Add("-lmsvcrt.lib");
+            _link_libs.Add("-lucrt.lib");
             // _link_flags.Add("-llibcmt.lib");
             break;
           default:
@@ -315,7 +343,7 @@ internal class NinjaGenerator : IDisposable {
           if (lib.kind is Kind.Lib or Kind.Dll) {
             collect_link_flags(lib);
             var kind = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? Kind.Lib : lib.kind;
-            _link_libs.Add(Path.Join(_ctx.bin_directory, lib.name.wrap(kind)));
+            _linker_inputs.Add(Path.Join(_ctx.bin_directory, lib.name.wrap(kind)));
           } else if (lib.kind is Kind.Iface) {
             collect_link_flags(lib);
           }
