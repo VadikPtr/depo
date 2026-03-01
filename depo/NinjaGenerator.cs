@@ -316,6 +316,7 @@ internal class NinjaGenerator : IDisposable {
       _link_flags.Add("-g");
       _link_flags.Add("-Xclang gcodeview");
       _link_flags.Add($"-Xlinker /pdb:{pdb}");
+      _link_flags.Add("-Xlinker /IGNORE:4099"); // warning: Cannot use debug info for
     }
 
     if (is_current_project && proj.kind is Kind.Dll or Kind.Exe && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {

@@ -20,12 +20,12 @@ if (cmd.actions.Contains(CmdAction.Clean)) {
 }
 
 if (cmd.actions.Contains(CmdAction.Pull)) {
-  var depo_deps = new DepoFile().parse();
+  var depo_deps = new DepoFile().parse(cmd.config);
   var deps      = new Dependencies(depo_deps);
   deps.pull();
 }
 
-DepoM depo_m = new DepoFile().parse();
+DepoM depo_m = new DepoFile().parse(cmd.config);
 
 if (!cmd.watch) {
   do_main(cmd, depo_m);

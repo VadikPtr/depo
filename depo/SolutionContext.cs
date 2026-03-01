@@ -1,10 +1,5 @@
 ﻿namespace depo;
 
-public enum BuildConfig {
-  Debug,
-  Release,
-}
-
 internal class SolutionContext {
   public readonly DepoM       model;
   public readonly BuildConfig config;

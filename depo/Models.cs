@@ -3,6 +3,15 @@ using System.Text.Json.Serialization;
 
 namespace depo;
 
+[Flags]
+internal enum BuildConfig {
+  None    = 0b000, // same as any
+  Dbg     = 0b001,
+  Rel     = 0b010,
+  Debug   = 0b001,
+  Release = 0b010,
+}
+
 internal enum Kind : uint {
   Dll,
   Lib,
@@ -72,6 +81,7 @@ internal class DepoM {
   public List<DependencyM>    svn_deps        = [];
   public List<DependencyM>    archive_deps    = [];
   public List<CustomCommandM> custom_commands = [];
+  public BuildConfig          build_config;
 }
 
 internal interface IDepoMAction {
@@ -116,6 +126,9 @@ internal class IncludeAction(AstNode[] args) : IProjectMAction {
     if (!args.check_os_flags()) {
       return;
     }
+    if (!args.check_build_config(model.depo.build_config)) {
+      return;
+    }
     var dirs = args.unpack_as_string_array_skip_flags()
       .Select(x => Path.Join(model.depo.dir, x))
       .ToArray();
@@ -127,6 +140,9 @@ internal class IncludeAction(AstNode[] args) : IProjectMAction {
 internal class LinkAction(AstNode[] args) : IProjectMAction {
   public void execute(ProjectM model) {
     if (!args.check_os_flags()) {
+      return;
+    }
+    if (!args.check_build_config(model.depo.build_config)) {
       return;
     }
     var libs       = args.unpack_as_string_array_skip_flags();
@@ -141,6 +157,9 @@ internal class LinkDirAction(AstNode[] args) : IProjectMAction {
     if (!args.check_os_flags()) {
       return;
     }
+    if (!args.check_build_config(model.depo.build_config)) {
+      return;
+    }
     var dirs = args.unpack_as_string_array_skip_flags()
       .Select(x => Path.Join(model.depo.dir, x))
       .ToArray();
@@ -152,6 +171,9 @@ internal class LinkDirAction(AstNode[] args) : IProjectMAction {
 internal class CFlagsAction(AstNode[] args) : IProjectMAction {
   public void execute(ProjectM model) {
     if (!args.check_os_flags()) {
+      return;
+    }
+    if (!args.check_build_config(model.depo.build_config)) {
       return;
     }
     var values = args.unpack_as_string_array_skip_flags();
@@ -271,6 +293,9 @@ internal class BinAction(AstNode[] args) : IDepoMAction {
     if (!args.check_os_flags()) {
       return;
     }
+    if (!args.check_build_config(model.build_config)) {
+      return;
+    }
     foreach (var value in args.unpack_as_string_array_skip_flags()) {
       model.bin.Add(Path.Join(model.dir, value));
     }
@@ -311,8 +336,8 @@ internal class DepoAction {
     }
   }
 
-  public DepoM call(string dir) {
-    var model = new DepoM { dir = dir };
+  public DepoM call(string dir, BuildConfig config) {
+    var model = new DepoM { dir = dir, build_config = config };
     foreach (var action in _actions) {
       action.execute(model);
     }

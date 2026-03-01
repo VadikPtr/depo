@@ -5,10 +5,10 @@ namespace depo;
 internal class DepoFile {
   private string _root_dir;
 
-  internal DepoM parse() {
+  internal DepoM parse(BuildConfig config) {
     _root_dir = Environment.CurrentDirectory;
 
-    var the_depo     = new DepoM { dir = _root_dir };
+    var the_depo     = new DepoM { dir = _root_dir, build_config = config };
     var dir_hash     = new HashSet<string>();
     var require_dirs = new Queue<string>();
     require_dirs.Enqueue(_root_dir);
@@ -24,7 +24,7 @@ internal class DepoFile {
         Log.info("Cannot read {0}", dir);
         continue;
       }
-      var model = expr.call(dir);
+      var model = expr.call(dir, config);
 
       the_depo.projects.AddRange(model.projects);
       the_depo.bin.AddRange(model.bin);

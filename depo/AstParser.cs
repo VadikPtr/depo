@@ -56,7 +56,7 @@ internal sealed partial class AstParser(List<string> tokens) {
     return tokens;
   }
 
-  [GeneratedRegex(@"\s*(,|[()]|[\w\[\]/':*\.\-_=@{}]+|[\S])")]
+  [GeneratedRegex(@"\s*(,|[()]|[\w\[\]/':*\.\,\-_=@{}]+|[\S])")]
   private static partial Regex split_regex();
 
   [GeneratedRegex(@";.*", RegexOptions.Multiline)]

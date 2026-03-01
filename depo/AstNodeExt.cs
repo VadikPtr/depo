@@ -72,4 +72,12 @@ internal static class AstNodeExt {
     }
     throw new Exception($"OS unhandled: {os}");
   }
+
+  internal static bool check_build_config(this IList<AstNode> nodes, BuildConfig building_config) {
+    BuildConfig node_build_config = nodes.parse_flags<BuildConfig>();
+    if (node_build_config == BuildConfig.None) {
+      return true;
+    }
+    return node_build_config == building_config;
+  }
 }
