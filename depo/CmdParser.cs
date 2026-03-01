@@ -13,7 +13,7 @@ internal sealed class CmdParser {
   public readonly HashSet<CmdAction> actions = [];
   public          BuildConfig        config  = BuildConfig.Debug;
   public          bool               watch   = false;
-  public          string             run_target;
+  public          string             target;
   public          string[]           run_target_args = [];
 
   public CmdParser parse() {
@@ -40,8 +40,10 @@ internal sealed class CmdParser {
       }
     }
 
-    if (actions.Contains(CmdAction.Run) || actions.Contains(CmdAction.Cmd)) {
-      run_target      = positional.Count != 0 ? positional[0] : null;
+    if (actions.Contains(CmdAction.Run) ||
+        actions.Contains(CmdAction.Build) ||
+        actions.Contains(CmdAction.Cmd)) {
+      target          = positional.Count != 0 ? positional[0] : null;
       run_target_args = positional.Skip(1).ToArray();
     }
 

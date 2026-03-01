@@ -58,6 +58,7 @@ public static class Subprocess {
   private static Process _current_process;
 
   public static SubprocessResult run(params string[] command) {
+    command = command.Where(x => !string.IsNullOrEmpty(x)).ToArray();
     using Process process     = new Process();
     var           file_name   = find_exe(command[0]);
     var           commandline = $"{file_name} {string.Join(' ', command.Skip(1))}";
@@ -87,6 +88,7 @@ public static class Subprocess {
   }
 
   public static void run_console_out(params string[] command) {
+    command = command.Where(x => !string.IsNullOrEmpty(x)).ToArray();
     using Process process     = new Process();
     var           file_name   = find_exe(command[0]);
     var           commandline = $"{file_name} {string.Join(' ', command.Skip(1))}";

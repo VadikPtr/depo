@@ -44,7 +44,7 @@ void do_main(CmdParser cmd, DepoM depo_m) {
   var timer = Stopwatch.StartNew();
 
   if (cmd.actions.Contains(CmdAction.Build)) {
-    var ninja = new SolutionContext(depo_m, cmd.config);
+    var ninja = new SolutionContext(depo_m, cmd.config, cmd.target);
     ninja.generate();
     ninja.dump_compile_commands();
     ninja.build();
@@ -56,7 +56,7 @@ void do_main(CmdParser cmd, DepoM depo_m) {
   }
 
   if (cmd.actions.Contains(CmdAction.Run)) {
-    var target = cmd.run_target ?? depo_m.targets[0];
+    var target = cmd.target ?? depo_m.targets[0];
     var path   = Path.Join("bin", cmd.config.ToString(), target);
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
       path += ".exe";
@@ -66,10 +66,10 @@ void do_main(CmdParser cmd, DepoM depo_m) {
   }
 
   if (cmd.actions.Contains(CmdAction.Cmd)) {
-    var command = depo_m.custom_commands.FirstOrDefault(x => x.name == cmd.run_target);
+    var command = depo_m.custom_commands.FirstOrDefault(x => x.name == cmd.target);
     if (command == null) {
       throw new Exception(
-        $"Command not found: {cmd.run_target}. " +
+        $"Command not found: {cmd.target}. " +
         $"Available commands: {string.Join(',', depo_m.custom_commands.Select(y => y.name))}"
       );
     }
