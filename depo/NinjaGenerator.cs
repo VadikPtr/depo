@@ -133,7 +133,7 @@ internal class NinjaGenerator : IDisposable {
     _writer.Write(
       $"""
       rule link
-        command = clang++ -o $linked $in {flags}
+        command = clang++ -o $linked {flags} -Wl,--start-group $in -Wl,--end-group
         description = link $out
       """
     );
@@ -332,10 +332,10 @@ internal class NinjaGenerator : IDisposable {
           prefix = "";
         }
         if ((link.flags & LinkFlags.Sys) != 0) {
-          _link_flags.Add(prefix + lib);
+          _link_libs.Add(prefix + lib);
         } else {
           var path = Path.Join(proj.depo.dir, lib);
-          _link_flags.Add(prefix + path);
+          _link_libs.Add(prefix + path);
         }
       }
     }
