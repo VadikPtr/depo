@@ -151,12 +151,12 @@ internal class NinjaGenerator : IDisposable {
   private void write_link_rules() {
     List<string> lines = ["clang++ -o $linked"];
     lines.AddRange(_link_flags);
-    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
       lines.Add("-Wl,--start-group");
     }
     lines.Add("$in");
     lines.AddRange(_link_libs);
-    if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+    if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
       lines.Add("-Wl,--end-group");
     }
     var command = string.Join(" $\n    ", lines);

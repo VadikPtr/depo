@@ -129,7 +129,12 @@ public static class Subprocess {
     if (_current_process is not { HasExited: false }) {
       return;
     }
-    _current_process.Kill(entireProcessTree: true);
+    try {
+      _current_process?.Kill(entireProcessTree: true);
+    } catch (InvalidOperationException) {
+      // ignore
+    }
+    _current_process = null;
   }
 
   private static string find_exe(string name) {
