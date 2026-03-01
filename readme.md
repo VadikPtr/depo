@@ -51,8 +51,9 @@ Run:
 - `depo build` - build solution (default debug config).
 - `depo build -r` - build solution in release config.
 - `depo run` - build solution and run first workspace target.
+- `depo run -w` - build solution and run first workspace target, watch for cpp/hpp changes and run same actions again (build and run target).
 - `depo run amogus` - build solution and run target named `amogus`.
-- `depo run amogus some arg` - build solution and run target named `amogus` with arguments `some arg`.
+- `depo run amogus -- some arg` - build solution and run target named `amogus` with arguments `some arg`.
 - `depo clean` - remove build files.
 - `depo vscode` - write some vscode settings files.
 - `depo pull` - initialize/update dependencies to actual versions.

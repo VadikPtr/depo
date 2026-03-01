@@ -12,6 +12,7 @@ internal enum CmdAction {
 internal sealed class CmdParser {
   public readonly HashSet<CmdAction> actions = [];
   public          BuildConfig        config  = BuildConfig.Debug;
+  public          bool               watch   = false;
   public          string             run_target;
   public          string[]           run_target_args = [];
 
@@ -32,6 +33,8 @@ internal sealed class CmdParser {
         config = BuildConfig.Debug;
       } else if (flag.StartsWith("-v")) {
         Log.is_debug = true;
+      } else if (flag.StartsWith("-w")) {
+        watch = true;
       } else {
         throw new Exception($"Unknown argument: {flag}");
       }
