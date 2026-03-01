@@ -49,17 +49,20 @@ internal class NinjaGenerator : IDisposable {
       _writer.Write($"build {dst}: {rule} {src}\n");
     }
 
-    var objs = string.Join(" $\n    ", file_targets.Select(x => x.dst));
     _writer.Write("\n");
+    List<string> inputs = [];
+    foreach (var target in file_targets) {
+      inputs.Add(target.dst);
+    }
 
     switch (_project.kind) {
       case Kind.Exe: {
-        var libs = string.Join(" $\n    ", _linker_inputs.Select(x => x.path_escape_ninja()));
+        foreach (var input in _linker_inputs) {
+          inputs.Add(input.path_escape_ninja());
+        }
         _writer.Write(
           $"""
-          build {output_path}: link $
-              {objs} $
-              {libs}
+          build {output_path}: link {string.Join(" $\n  ", inputs)}
             linked = {output_path}
 
           """
@@ -70,12 +73,12 @@ internal class NinjaGenerator : IDisposable {
         var implib = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
           ? project_output_files(_project.name, Kind.Lib)
           : "";
-        var libs = string.Join(" $\n    ", _linker_inputs.Select(x => x.path_escape_ninja()));
+        foreach (var input in _linker_inputs) {
+          inputs.Add(input.path_escape_ninja());
+        }
         _writer.Write(
           $"""
-          build {output_path} {implib}: link $
-              {objs} $
-              {libs}
+          build {output_path} {implib}: link {string.Join(" $\n  ", inputs)}
             linked = {output_path}
 
           """
@@ -83,7 +86,7 @@ internal class NinjaGenerator : IDisposable {
         break;
       }
       case Kind.Lib:
-        _writer.Write($"build {output_path}: ar {objs}\n\n");
+        _writer.Write($"build {output_path}: ar {string.Join(" $\n  ", inputs)}\n\n");
         break;
     }
 
