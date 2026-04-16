@@ -3,22 +3,22 @@
 namespace depo;
 
 internal class NinjaGenerator : IDisposable {
-  public readonly  string          project_file;
-  private readonly ProjectM        _project;
+  public readonly string project_file;
+  private readonly ProjectM _project;
   private readonly SolutionContext _ctx;
-  private readonly FileStream      _stream;
-  private readonly StreamWriter    _writer;
+  private readonly FileStream _stream;
+  private readonly StreamWriter _writer;
   private readonly HashSet<string> _linker_inputs = [];
-  private readonly HashSet<string> _link_flags    = [];
-  private readonly HashSet<string> _link_libs     = [];
-  private readonly HashSet<string> _cflags        = [];
+  private readonly HashSet<string> _link_flags = [];
+  private readonly HashSet<string> _link_libs = [];
+  private readonly HashSet<string> _cflags = [];
 
   public NinjaGenerator(ProjectM project, SolutionContext ctx) {
     project_file = Path.Join(ctx.build_directory, $"{project.name}.ninja");
-    _project     = project;
-    _ctx         = ctx;
-    _stream      = new FileStream(project_file, FileMode.Create, FileAccess.Write);
-    _writer      = new StreamWriter(_stream);
+    _project = project;
+    _ctx = ctx;
+    _stream = new FileStream(project_file, FileMode.Create, FileAccess.Write);
+    _writer = new StreamWriter(_stream);
   }
 
   public void Dispose() {
@@ -57,34 +57,34 @@ internal class NinjaGenerator : IDisposable {
 
     switch (_project.kind) {
       case Kind.Exe: {
-        foreach (var input in _linker_inputs) {
-          inputs.Add(input.path_escape_ninja());
-        }
-        _writer.Write(
-          $"""
+          foreach (var input in _linker_inputs) {
+            inputs.Add(input.path_escape_ninja());
+          }
+          _writer.Write(
+            $"""
           build {output_path}: link {string.Join(" $\n  ", inputs)}
             linked = {output_path}
 
           """
-        );
-        break;
-      }
-      case Kind.Dll: {
-        var implib = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-          ? project_output_files(_project.name, Kind.Lib)
-          : "";
-        foreach (var input in _linker_inputs) {
-          inputs.Add(input.path_escape_ninja());
+          );
+          break;
         }
-        _writer.Write(
-          $"""
+      case Kind.Dll: {
+          var implib = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            ? project_output_files(_project.name, Kind.Lib)
+            : "";
+          foreach (var input in _linker_inputs) {
+            inputs.Add(input.path_escape_ninja());
+          }
+          _writer.Write(
+            $"""
           build {output_path} {implib}: link {string.Join(" $\n  ", inputs)}
             linked = {output_path}
 
           """
-        );
-        break;
-      }
+          );
+          break;
+        }
       case Kind.Lib:
         _writer.Write($"build {output_path}: ar {string.Join(" $\n  ", inputs)}\n\n");
         break;
@@ -95,7 +95,7 @@ internal class NinjaGenerator : IDisposable {
 
   private string get_obj_path(string source_path) {
     var relative_path = Path.GetRelativePath(relativeTo: _ctx.model.dir, source_path);
-    var full_path     = Path.Join(_ctx.obj_directory, relative_path);
+    var full_path = Path.Join(_ctx.obj_directory, relative_path);
     return Path.ChangeExtension(full_path, ".o").path_escape_ninja();
   }
 
@@ -111,9 +111,9 @@ internal class NinjaGenerator : IDisposable {
   }
 
   private string project_output_files(string name, Kind kind) {
-    var target      = name.wrap(kind);
+    var target = name.wrap(kind);
     var output_path = Path.Join(_ctx.bin_directory, target);
-    var result      = output_path.path_escape_ninja();
+    var result = output_path.path_escape_ninja();
     if (kind is Kind.Dll) {
       // result += " | " + project_output_files(name, Kind.Lib);
       // result += " " + project_output_files(name, Kind.Lib);
@@ -123,7 +123,7 @@ internal class NinjaGenerator : IDisposable {
 
   private void write_compile_rules() {
     var cflags_str = string.Join(" $\n    ", _cflags);
-    var archiver   = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "llvm-ar" : "ar";
+    var archiver = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "llvm-ar" : "ar";
     _writer.Write(
       $"""
       rule cc
@@ -321,6 +321,9 @@ internal class NinjaGenerator : IDisposable {
 
     if (is_current_project && proj.kind is Kind.Dll or Kind.Exe && RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
       _link_flags.Add("-Wl,-rpath,@executable_path");
+    }
+    if (is_current_project && proj.kind is Kind.Exe && RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+      _link_flags.Add("-Wl,-rpath,'$$ORIGIN'");
     }
 
     foreach (var dir in proj.link_dirs) {
