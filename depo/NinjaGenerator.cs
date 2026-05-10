@@ -184,6 +184,7 @@ internal class NinjaGenerator : IDisposable {
   private void collect_cflags() {
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
       _cflags.Add("-fansi-escape-codes");
+      _cflags.Add("-D_DLL");
     }
     _cflags.Add("-fdiagnostics-color=always");
     _cflags.Add("--write-dependencies"); // Write a depfile containing user and system headers 
@@ -196,7 +197,7 @@ internal class NinjaGenerator : IDisposable {
         _cflags.Add("-DDEBUG");
         _cflags.Add("-D_DEBUG");
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
-          _cflags.Add("-gcodeview"); // -Xclang 
+          _cflags.Add("-gcodeview"); // -Xclang
         }
         break;
       case BuildConfig.Release:
@@ -244,9 +245,10 @@ internal class NinjaGenerator : IDisposable {
   private void collect_definitions(ProjectM proj) {
     bool is_current_project = proj == _project;
 
-    if (is_current_project && proj.kind == Kind.Dll) {
-      _cflags.Add("-D_DLL");
-    }
+    // this is for MDd (Dynamic Debug)
+    // if (is_current_project && proj.kind == Kind.Dll) {
+    //   _cflags.Add("-D_DLL");
+    // }
 
     foreach (var def in proj.cflags) {
       bool is_shared = def.flags != VisibilityFlags.None;
@@ -282,18 +284,20 @@ internal class NinjaGenerator : IDisposable {
       if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
         _link_flags.Add("-Wl,/NODEFAULTLIB:libcmt");
         _link_flags.Add("-Wl,/NODEFAULTLIB:libcmtd");
-        _link_flags.Add("-Wl,/NODEFAULTLIB:msvcrtd");
-        _link_flags.Add("-Wl,/NODEFAULTLIB:msvcrt");
+        // _link_flags.Add("-Wl,/NODEFAULTLIB:msvcrtd");
+        // _link_flags.Add("-Wl,/NODEFAULTLIB:msvcrt");
         switch (_ctx.config) {
-          case BuildConfig.Debug:
+          case BuildConfig.Debug: // dynamic debug
             _link_libs.Add("-lmsvcrtd.lib");
             _link_libs.Add("-lucrtd.lib");
             // _link_flags.Add("-llibcmtd.lib");
+            // _link_flags.Add("-MDd");
             break;
-          case BuildConfig.Release:
+          case BuildConfig.Release: // dynamic release
             _link_libs.Add("-lmsvcrt.lib");
             _link_libs.Add("-lucrt.lib");
             // _link_flags.Add("-llibcmt.lib");
+            // _link_flags.Add("-MD");
             break;
           default:
             throw new ArgumentOutOfRangeException();
