@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 
 namespace depo;
@@ -53,7 +54,7 @@ internal class ProjectM {
   [JsonIgnore] public DepoM         depo;
   public              string        name;
   public              Kind          kind;
-  public              List<string>  files     = [];
+  public              HashSet<string>  files     = [];
   public              List<Include> include   = [];
   public              List<Link>    link      = [];
   public              List<LinkDir> link_dirs = [];
@@ -107,15 +108,40 @@ internal class FilesAction(AstNode[] args) : IProjectMAction {
     if (!args.check_os_flags()) {
       return;
     }
-    var files = args.unpack_as_string_array_skip_flags();
-    foreach (var file in files) {
-      if (file.Contains('*')) {
-        foreach (var f in Directory.EnumerateFiles(model.depo.dir, file, SearchOption.AllDirectories)) {
+    var patterns = args.unpack_as_string_array_skip_flags();
+    foreach (var pattern in patterns) {
+      if (pattern.Contains('*')) {
+        foreach (var f in Directory.EnumerateFiles(model.depo.dir, pattern, SearchOption.AllDirectories)
+            .Select(PathLib.normalize)) {
           model.files.Add(f);
         }
       } else {
-        var full_path = Path.Join(model.depo.dir, file);
+        var full_path = PathLib.normalize(Path.Join(model.depo.dir, pattern));
         model.files.Add(full_path);
+      }
+    }
+  }
+}
+
+internal class ExcludeFilesAction(AstNode[] args) : IProjectMAction {
+  public void execute(ProjectM model) {
+    if (!args.check_os_flags()) {
+      return;
+    }
+    var patterns = args.unpack_as_string_array_skip_flags();
+    foreach (var pattern in patterns) {
+      if (pattern.Contains('*')) {
+        foreach (var f in Directory.EnumerateFiles(model.depo.dir, pattern, SearchOption.AllDirectories)
+            .Select(PathLib.normalize)) {
+          if (model.files.Remove(f)) {
+            Log.debug("Exclude file: {0}", f);
+          }
+        }
+      } else {
+        var full_path = PathLib.normalize(Path.Join(model.depo.dir, pattern));
+        if (model.files.Remove(full_path)) {
+          Log.debug("Exclude file: {0}", full_path);
+        }
       }
     }
   }
@@ -192,6 +218,7 @@ internal class ProjectAction : IDepoMAction {
       switch (node.value) {
         case "kind":  _actions.Add(new KindAction(node.children)); break;
         case "files": _actions.Add(new FilesAction(node.children)); break;
+        case "ex-files": _actions.Add(new ExcludeFilesAction(node.children)); break;
         case "include":
         case "inc": _actions.Add(new IncludeAction(node.children)); break;
         case "link":      _actions.Add(new LinkAction(node.children)); break;
