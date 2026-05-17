@@ -3,16 +3,20 @@
 Dependency manager and build system for C/C++ on top of ninja and clang.
 
 Features:
-- Supports Windows and macOS. Note: for Windows it is required to have clang installed via Visual Studio Installer.
+- Supports Windows and macOS.
 - Integrates with any editor with support of clangd with `compile_commands.json` file. It will be created/updated automatically on build stage.
 - Clones dependencies recursively with git, svn, https tar.xz archive.
 - For tar.xz archive dependencies supports timestamps, so it will not be pulled again if no changes.
 - Very fast startup. On Windows when no file has changed, build will run in 80 milliseconds.
 - When project links with another project, it automatically pulls public flags, link libraries, include dirs (similar to CMake behavior).
 
-## Build
+## Installation
+
+**Runtime requirements**: ninja, 7z (and vswhere on windows) executables to be in PATH. clang, clang++ should be present also (on Windows it is not required to be in PATH if installed with Visual Studio).
 
 ### Windows
+
+If clang is installed with Visual Studio Installer, then depo should be used under Developer PowerShell for VS. For standalone installation see https://github.com/llvm/llvm-project/releases.
 
 ```bash
 dotnet publish -c Release

@@ -137,21 +137,34 @@ public static class Subprocess {
     _current_process = null;
   }
 
-  private static string find_exe(string name) {
+  public static bool try_find_exe(string name, out string out_path) {
     if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !name.EndsWith(".exe")) {
       name += ".exe";
     }
     if (name.Contains('/') || name.Contains('\\')) {
       // not a cmd name, but path
-      return name;
+      out_path = name;
+      return true;
     }
-    var path = Environment.GetEnvironmentVariable("PATH")
-               ?? throw new Exception("Environment variable PATH is not set");
+    var path = Environment.GetEnvironmentVariable("PATH");
+    if (path == null) {
+      out_path = "";
+      return false;
+    }
     foreach (var dir in path.Split(Path.PathSeparator)) {
       var try_path = Path.Join(dir, name);
       if (File.Exists(try_path)) {
-        return try_path;
+        out_path = try_path;
+        return true;
       }
+    }
+    out_path = "";
+    return false;
+  }
+
+  public static string find_exe(string name) {
+    if (try_find_exe(name, out var path)) {
+      return path;
     }
     throw new Exception($"Cannot find {name}");
   }

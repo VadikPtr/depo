@@ -13,6 +13,10 @@ public static class MsvcContext {
     if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
       return;
     }
+    if (Subprocess.try_find_exe("clang", out _)) {
+      // clang present, no need to enter msvc env
+      return;
+    }
     if (Environment.GetEnvironmentVariable("VSCMD_VER") != null) {
       // already entered
       return;
