@@ -6,14 +6,14 @@ internal static class EnumGenerator {
   private record EnumValue(int priority, string name);
 
   internal static void generate(GenerateEnum generate_enum, ProjectM project) {
-    HashSet<string> file_list     = get_file_list(generate_enum, project);
-    string[]        file_contents = file_list.Select(File.ReadAllText).ToArray();
-    List<string>    outputs       = new List<string>(capacity: generate_enum.macro.Length);
+    HashSet<string> file_list = get_file_list(generate_enum, project);
+    string[] file_contents = file_list.Select(File.ReadAllText).ToArray();
+    List<string> outputs = new List<string>(capacity: generate_enum.macro.Length);
 
     foreach (var macro_name in generate_enum.macro) {
       EnumValue[] enum_keys = extract_enum_keys(macro_name, file_contents);
-      string      enum_name = macro_name[1..];
-      string      output    = generate_file_content(enum_name, enum_keys);
+      string enum_name = macro_name[1..];
+      string output = generate_file_content(enum_name, enum_keys);
       outputs.Add(output);
     }
 
@@ -64,9 +64,9 @@ internal static class EnumGenerator {
   }
 
   private static void write_content(List<string> outputs, string out_path) {
-    string output             = string.Join('\n', outputs.Prepend("#pragma once"));
+    string output = string.Join('\n', outputs.Prepend("#include <cstddef>").Prepend("#pragma once"));
     byte[] existing_file_hash = Hash.get_file_hash(out_path);
-    byte[] output_hash        = Hash.get_string_hash(output);
+    byte[] output_hash = Hash.get_string_hash(output);
     if (existing_file_hash.SequenceEqual(output_hash)) {
       Log.info($"Generated enum {out_path} already contains actual enums");
       return;
