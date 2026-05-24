@@ -5,17 +5,42 @@ namespace depo;
 internal static class EnumGenerator {
   private record EnumValue(int priority, string name);
 
-  internal static void generate(GenerateEnum generate_enum, HashSet<string> files) {
-    EnumValue[] enum_keys = extract_enum_keys(generate_enum.macro_name, files);
-    string      enum_name = get_enum_name(generate_enum.macro_name);
-    string      output    = generate_file_content(enum_name, enum_keys);
-    write_content(output, generate_enum.out_path);
+  internal static void generate(GenerateEnum generate_enum, ProjectM project) {
+    HashSet<string> file_list     = get_file_list(generate_enum, project);
+    string[]        file_contents = file_list.Select(File.ReadAllText).ToArray();
+    List<string>    outputs       = new List<string>(capacity: generate_enum.macro.Length);
+
+    foreach (var macro_name in generate_enum.macro) {
+      EnumValue[] enum_keys = extract_enum_keys(macro_name, file_contents);
+      string      enum_name = macro_name[1..];
+      string      output    = generate_file_content(enum_name, enum_keys);
+      outputs.Add(output);
+    }
+
+    write_content(outputs, generate_enum.out_path);
   }
 
-  private static EnumValue[] extract_enum_keys(string macro_name, HashSet<string> files) {
+  private static HashSet<string> get_file_list(GenerateEnum generate_enum, ProjectM project) {
+    HashSet<string> file_list = [];
+    foreach (var requested_file in generate_enum.files) {
+      if (requested_file == "'project-files") {
+        foreach (var path in project.files) {
+          file_list.Add(path);
+        }
+      } else if (requested_file.Contains('*')) {
+        foreach (var path in Directory.EnumerateFiles(project.depo.dir, requested_file, SearchOption.AllDirectories)) {
+          file_list.Add(path);
+        }
+      } else {
+        file_list.Add(Path.Join(project.depo.dir, requested_file));
+      }
+    }
+    return file_list;
+  }
+
+  private static EnumValue[] extract_enum_keys(string macro_name, string[] file_contents) {
     List<EnumValue> enums_keys = [];
-    foreach (var file in files) {
-      string          text    = File.ReadAllText(file);
+    foreach (var text in file_contents) {
       MatchCollection matches = Regex.Matches(text, $@"{macro_name}\(([^)]*)\)");
       foreach (Match match in matches) {
         string value = match.Groups[1].Value;
@@ -38,9 +63,10 @@ internal static class EnumGenerator {
       .ToArray();
   }
 
-  private static void write_content(string output, string out_path) {
-    var existing_file_hash = Hash.get_file_hash(out_path);
-    var output_hash        = Hash.get_string_hash(output);
+  private static void write_content(List<string> outputs, string out_path) {
+    string output             = string.Join('\n', outputs.Prepend("#pragma once"));
+    byte[] existing_file_hash = Hash.get_file_hash(out_path);
+    byte[] output_hash        = Hash.get_string_hash(output);
     if (existing_file_hash.SequenceEqual(output_hash)) {
       Log.info($"Generated enum {out_path} already contains actual enums");
       return;
@@ -59,8 +85,6 @@ internal static class EnumGenerator {
     var x_enum_values = string.Join(" \\\n", enum_keys.Select(x => $"  X({x.name})"));
     return
       $$"""
-      #pragma once
-
       enum class {{enum_name}} {
       {{enum_values}}
       };
@@ -71,9 +95,5 @@ internal static class EnumGenerator {
       {{x_enum_values}}
 
       """;
-  }
-
-  private static string get_enum_name(string macro_name) {
-    return macro_name[1..];
   }
 }

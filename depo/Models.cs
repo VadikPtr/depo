@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 
 namespace depo;
@@ -49,7 +50,7 @@ internal record Link(VisibilityFlags visibility, LinkFlags flags, string[] libs)
 
 internal record LinkDir(VisibilityFlags visibility, string[] dirs);
 
-internal record GenerateEnum(string macro_name, string out_path);
+internal record GenerateEnum(string out_path, string[] macro, string[] files);
 
 internal class ProjectM {
   [JsonIgnore] public DepoM              depo;
@@ -212,18 +213,26 @@ internal class CFlagsAction(AstNode[] args) : IProjectMAction {
 
 internal class GenerateEnumAction(AstNode[] args) : IProjectMAction {
   public void execute(ProjectM model) {
-    // if (!args.check_os_flags()) {
-    //   return;
-    // }
-    // if (!args.check_build_config(model.depo.build_config)) {
-    //   return;
-    // }
-    var arguments = args.unpack_as_string_array();
-    if (arguments.Length != 2) {
-      throw new Exception("Invalid arguments for generate enum action. Should be 2: enum name, out path");
-    }
-    var generate_enum = new GenerateEnum(macro_name: arguments[0],
-                                         out_path: Path.Join(model.depo.dir, arguments[1]));
+    var out_path = Path.Join(model.depo.dir, args[..1].unpack_as_string());
+    var macro = args.Where(x => !x.is_leaf && x.value == "macro")
+      .SelectMany(x => x.children)
+      .Select(x => {
+        if (!x.is_leaf) {
+          throw new InvalidOperationException($"Expected {x} to be value expression!");
+        }
+        return x.value;
+      })
+      .ToArray();
+    var files = args.Where(x => !x.is_leaf && x.value == "files")
+      .SelectMany(x => x.children)
+      .Select(x => {
+        if (!x.is_leaf) {
+          throw new InvalidOperationException($"Expected {x} to be value expression!");
+        }
+        return x.value;
+      })
+      .ToArray();
+    var generate_enum = new GenerateEnum(out_path: out_path, macro: macro, files: files);
     model.generate_enums.Add(generate_enum);
   }
 }
@@ -244,7 +253,7 @@ internal class ProjectAction : IDepoMAction {
         case "link":      _actions.Add(new LinkAction(node.children)); break;
         case "link-dirs": _actions.Add(new LinkDirAction(node.children)); break;
         case "flags":     _actions.Add(new CFlagsAction(node.children)); break;
-        case "gen-enum":  _actions.Add(new GenerateEnumAction(node.children)); break;
+        case "gen-enums": _actions.Add(new GenerateEnumAction(node.children)); break;
         default:          throw new Exception($"Unexpected node for project: {node.value}");
       }
     }

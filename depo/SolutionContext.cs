@@ -31,7 +31,7 @@ internal class SolutionContext {
     bool any   = false;
     foreach (var model_project in model.projects) {
       foreach (var generate_enum in model_project.generate_enums) {
-        EnumGenerator.generate(generate_enum, model_project.files);
+        EnumGenerator.generate(generate_enum, model_project);
         any = true;
       }
     }
