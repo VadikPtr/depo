@@ -4,13 +4,17 @@ using System.Text;
 namespace depo;
 
 public static class Hash {
-  private static byte[] get_file_hash(string file_path) {
+  internal static byte[] get_file_hash(string file_path) {
     if (!File.Exists(file_path)) {
       return Encoding.UTF8.GetBytes(file_path);
     }
     using var stream = new BufferedStream(File.OpenRead(file_path), 1024 * 1024);
     using var sha256 = SHA256.Create();
     return sha256.ComputeHash(stream);
+  }
+  
+  internal static byte[] get_string_hash(string str) {
+    return SHA256.HashData(Encoding.UTF8.GetBytes(str));
   }
 
   public static bool is_files_equal(string file1, string file2) {

@@ -1,4 +1,6 @@
-﻿namespace depo;
+﻿using System.Diagnostics;
+
+namespace depo;
 
 internal class SolutionContext {
   public readonly DepoM       model;
@@ -22,6 +24,20 @@ internal class SolutionContext {
     }
     Log.info($"Target: {target}");
     Log.info($"Build directory: {build_directory}");
+  }
+
+  public void generate_enums() {
+    var  timer = Stopwatch.StartNew();
+    bool any   = false;
+    foreach (var model_project in model.projects) {
+      foreach (var generate_enum in model_project.generate_enums) {
+        EnumGenerator.generate(generate_enum, model_project.files);
+        any = true;
+      }
+    }
+    if (any) {
+      Log.info("Enums generated: {0}", timer.Elapsed);
+    }
   }
 
   public void generate() {

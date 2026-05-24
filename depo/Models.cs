@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 
 namespace depo;
@@ -50,15 +49,18 @@ internal record Link(VisibilityFlags visibility, LinkFlags flags, string[] libs)
 
 internal record LinkDir(VisibilityFlags visibility, string[] dirs);
 
+internal record GenerateEnum(string macro_name, string out_path);
+
 internal class ProjectM {
-  [JsonIgnore] public DepoM         depo;
-  public              string        name;
-  public              Kind          kind;
-  public              HashSet<string>  files     = [];
-  public              List<Include> include   = [];
-  public              List<Link>    link      = [];
-  public              List<LinkDir> link_dirs = [];
-  public              List<CFlags>  cflags    = [];
+  [JsonIgnore] public DepoM              depo;
+  public              string             name;
+  public              Kind               kind;
+  public              HashSet<string>    files          = [];
+  public              List<Include>      include        = [];
+  public              List<Link>         link           = [];
+  public              List<LinkDir>      link_dirs      = [];
+  public              List<CFlags>       cflags         = [];
+  public              List<GenerateEnum> generate_enums = [];
 }
 
 internal class DependencyM {
@@ -112,7 +114,7 @@ internal class FilesAction(AstNode[] args) : IProjectMAction {
     foreach (var pattern in patterns) {
       if (pattern.Contains('*')) {
         foreach (var f in Directory.EnumerateFiles(model.depo.dir, pattern, SearchOption.AllDirectories)
-            .Select(PathLib.normalize)) {
+                   .Select(PathLib.normalize)) {
           model.files.Add(f);
         }
       } else {
@@ -132,7 +134,7 @@ internal class ExcludeFilesAction(AstNode[] args) : IProjectMAction {
     foreach (var pattern in patterns) {
       if (pattern.Contains('*')) {
         foreach (var f in Directory.EnumerateFiles(model.depo.dir, pattern, SearchOption.AllDirectories)
-            .Select(PathLib.normalize)) {
+                   .Select(PathLib.normalize)) {
           if (model.files.Remove(f)) {
             Log.debug("Exclude file: {0}", f);
           }
@@ -208,6 +210,24 @@ internal class CFlagsAction(AstNode[] args) : IProjectMAction {
   }
 }
 
+internal class GenerateEnumAction(AstNode[] args) : IProjectMAction {
+  public void execute(ProjectM model) {
+    // if (!args.check_os_flags()) {
+    //   return;
+    // }
+    // if (!args.check_build_config(model.depo.build_config)) {
+    //   return;
+    // }
+    var arguments = args.unpack_as_string_array();
+    if (arguments.Length != 2) {
+      throw new Exception("Invalid arguments for generate enum action. Should be 2: enum name, out path");
+    }
+    var generate_enum = new GenerateEnum(macro_name: arguments[0],
+                                         out_path: Path.Join(model.depo.dir, arguments[1]));
+    model.generate_enums.Add(generate_enum);
+  }
+}
+
 internal class ProjectAction : IDepoMAction {
   private readonly List<IProjectMAction> _actions = [];
   public           string                name;
@@ -216,14 +236,15 @@ internal class ProjectAction : IDepoMAction {
     name = args.First().as_leaf();
     foreach (var node in args.Skip(1)) {
       switch (node.value) {
-        case "kind":  _actions.Add(new KindAction(node.children)); break;
-        case "files": _actions.Add(new FilesAction(node.children)); break;
+        case "kind":     _actions.Add(new KindAction(node.children)); break;
+        case "files":    _actions.Add(new FilesAction(node.children)); break;
         case "ex-files": _actions.Add(new ExcludeFilesAction(node.children)); break;
         case "include":
         case "inc": _actions.Add(new IncludeAction(node.children)); break;
         case "link":      _actions.Add(new LinkAction(node.children)); break;
         case "link-dirs": _actions.Add(new LinkDirAction(node.children)); break;
         case "flags":     _actions.Add(new CFlagsAction(node.children)); break;
+        case "gen-enum":  _actions.Add(new GenerateEnumAction(node.children)); break;
         default:          throw new Exception($"Unexpected node for project: {node.value}");
       }
     }

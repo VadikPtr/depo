@@ -44,11 +44,12 @@ void do_main(CmdParser cmd, DepoM depo_m) {
   var timer = Stopwatch.StartNew();
 
   if (cmd.actions.Contains(CmdAction.Build)) {
-    var ninja = new SolutionContext(depo_m, cmd.config, cmd.target);
-    ninja.generate();
-    ninja.dump_compile_commands();
-    ninja.build();
-    FileCopy.copy_binary_files(depo_m, ninja.bin_directory);
+    var solution = new SolutionContext(depo_m, cmd.config, cmd.target);
+    solution.generate_enums();
+    solution.generate();
+    solution.dump_compile_commands();
+    solution.build();
+    FileCopy.copy_binary_files(depo_m, solution.bin_directory);
   }
 
   if (cmd.actions.Contains(CmdAction.VsCode)) {
