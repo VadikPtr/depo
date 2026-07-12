@@ -93,10 +93,12 @@ internal class NinjaGenerator : IDisposable {
     _writer.Write($"\nbuild {_project.name}: phony {output_path}\n\n");
   }
 
+  private static int _obj_id = 0;
   private string get_obj_path(string source_path) {
+    ++_obj_id;
     var relative_path = Path.GetRelativePath(relativeTo: _ctx.model.dir, source_path);
     var full_path = Path.Join(_ctx.obj_directory, relative_path);
-    return Path.ChangeExtension(full_path, ".o").path_escape_ninja();
+    return (Path.ChangeExtension(full_path, "") + $"{_obj_id}.o").path_escape_ninja();
   }
 
   private static string detect_rule(string file_name) {
