@@ -8,7 +8,7 @@ public class ChangeWatcher(Action action) {
 
   public void start() {
     List<FileSystemWatcher> watchers   = [];
-    string[]                extensions = ["*.hpp", "*.cpp", "*.h", "*.c"];
+    string[]                extensions = ["*.hpp", "*.cpp", "*.h", "*.c", "*.m", "*.mm"];
 
     foreach (var ext in extensions) {
       var watcher = new FileSystemWatcher {
